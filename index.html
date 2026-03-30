@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Year 6 Science — Adaptive Practice</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a1a2e;--ink2:#4a4a6a;--ink3:#8888aa;--ink4:#c0c0d8;
+  --paper:#f0f4ff;--surface:#fff;--border:#dde2f0;--border2:#bec5e0;
+  --bio:#166534;--bio-bg:#dcfce7;--bio-mid:#22c55e;
+  --chem:#1e40af;--chem-bg:#dbeafe;--chem-mid:#3b82f6;
+  --phys:#92400e;--phys-bg:#fef3c7;--phys-mid:#f59e0b;
+  --ws:#5b21b6;--ws-bg:#ede9fe;--ws-mid:#8b5cf6;
+  --ext:#be185d;--ext-bg:#fce7f3;
+  --exc-bg:#d1fae5;--exc-txt:#065f46;--exc-bdr:#6ee7b7;
+  --ep-bg:#dbeafe;--ep-txt:#1e40af;--ep-bdr:#93c5fd;
+  --ex-bg:#f1f5f9;--ex-txt:#334155;--ex-bdr:#cbd5e1;
+  --em-bg:#fef3c7;--em-txt:#92400e;--em-bdr:#fcd34d;
+  --er-bg:#fee2e2;--er-txt:#991b1b;--er-bdr:#fca5a5;
+  --r:12px;--rl:18px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+#s-login{align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f0c29 0%,#1a1a4e 50%,#24243e 100%);
+  position:relative;overflow:hidden}
+.stars-bg{position:absolute;inset:0;pointer-events:none}
+.star-dot{position:absolute;border-radius:50%;background:#fff;
+  animation:twinkle var(--d) ease-in-out infinite var(--dl)}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.9}}
+.login-card{background:var(--surface);border-radius:24px;padding:2.2rem 2rem;
+  width:min(420px,92vw);box-shadow:0 32px 80px rgba(0,0,0,.5);position:relative;z-index:1}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.logo-name{font-family:'Nunito',sans-serif;font-size:15px;font-weight:800}
+.logo-sub{font-size:11px;color:var(--ink3)}
+.login-card h1{font-family:'Nunito',sans-serif;font-size:22px;font-weight:800;
+  letter-spacing:-.5px;margin-bottom:.3rem}
+.login-card>p{font-size:13px;color:var(--ink3);margin-bottom:1.4rem;line-height:1.5}
+.field{margin-bottom:.85rem}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--ink2);
+  margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.field input,.field select{width:100%;padding:9px 13px;border:1.5px solid var(--border);
+  border-radius:var(--r);font-size:14px;font-family:'Nunito Sans',sans-serif;
+  background:var(--paper);color:var(--ink);appearance:none;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--ink)}
+.btn-start{width:100%;padding:12px;
+  background:linear-gradient(135deg,#1a1a4e,#0f3460);color:#fff;border:none;
+  border-radius:var(--r);font-size:14px;font-weight:800;font-family:'Nunito',sans-serif;
+  cursor:pointer;margin-top:.5rem;letter-spacing:.3px}
+.btn-start:hover{opacity:.88}
+.login-note{font-size:11px;color:var(--ink4);text-align:center;margin-top:.8rem;line-height:1.5}
+#s-quiz{background:var(--paper)}
+.qhdr{background:var(--surface);border-bottom:1px solid var(--border);
+  padding:.65rem 1rem;display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:10}
+.qhdr-name{font-size:13px;font-weight:600}
+.qhdr-cls{font-size:10px;color:var(--ink3);font-family:monospace}
+.qhdr-prog{flex:1}
+.prog-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,#1a1a4e,#0f3460);transition:width .4s}
+.qhdr-count{font-size:11px;color:var(--ink3);font-family:monospace;white-space:nowrap}
+.diff-chip{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;
+  text-transform:uppercase;white-space:nowrap}
+.dc-easy{background:#dcfce7;color:#166534}
+.dc-medium{background:#fef3c7;color:#92400e}
+.dc-hard{background:#fee2e2;color:#991b1b}
+.dc-ext{background:#fce7f3;color:#be185d}
+.btn-stop{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;
+  font-family:'Nunito',sans-serif;background:transparent;
+  border:1.5px solid #fca5a5;color:#991b1b;cursor:pointer;white-space:nowrap}
+.btn-stop:hover{background:#fee2e2}
+.streak-chip{display:none;align-items:center;gap:4px;font-size:11px;font-weight:600;
+  color:#92400e;background:#fef3c7;padding:3px 9px;border-radius:20px}
+.streak-chip.show{display:flex}
+.qwrap{flex:1;padding:1.2rem 1.1rem;max-width:660px;margin:0 auto;
+  width:100%;padding-bottom:2rem}
+.q-num{font-size:11px;color:var(--ink3);font-family:monospace;margin-bottom:.4rem}
+.dom-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
+  padding:3px 10px;border-radius:20px;margin-bottom:.6rem}
+.db-bio{background:var(--bio-bg);color:var(--bio)}
+.db-chem{background:var(--chem-bg);color:var(--chem)}
+.db-phys{background:var(--phys-bg);color:var(--phys)}
+.db-ws{background:var(--ws-bg);color:var(--ws)}
+.ai-chip{font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;
+  background:#ede9fe;color:#5b21b6;margin-left:5px;vertical-align:middle}
+.fb-chip{font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;
+  background:#fef3c7;color:#92400e;margin-left:5px;vertical-align:middle}
+.q-ctx{background:var(--surface);border:1.5px solid var(--border2);
+  border-left:4px solid var(--chem-mid);border-radius:var(--r);
+  padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--ink2);line-height:1.6}
+.q-ctx-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--ink3);margin-bottom:4px}
+.q-text{font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;
+  line-height:1.5;color:var(--ink);margin-bottom:1rem;letter-spacing:-.15px}
+.q-hint{background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--r);
+  padding:8px 12px;font-size:12px;color:#78350f;margin-bottom:1rem;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:11px;padding:11px 14px;
+  border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;
+  font-size:14px;color:var(--ink);background:var(--surface);text-align:left;
+  transition:border-color .12s,background .12s;font-family:'Nunito Sans',sans-serif}
+.opt:hover:not(.locked){border-color:var(--border2);background:var(--paper)}
+.opt.locked{cursor:default}
+.opt.correct{border-color:#16a34a;background:#f0fdf4;color:#14532d}
+.opt.wrong{border-color:#dc2626;background:#fef2f2;color:#7f1d1d}
+.opt.reveal{border-color:#16a34a;background:#f0fdf4;color:#14532d}
+.opt-let{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  font-weight:700;font-family:monospace;flex-shrink:0;color:var(--ink3)}
+.opt.correct .opt-let{background:#16a34a;border-color:#16a34a;color:#fff}
+.opt.wrong .opt-let{background:#dc2626;border-color:#dc2626;color:#fff}
+.opt.reveal .opt-let{background:#16a34a;border-color:#16a34a;color:#fff}
+.fb{margin-top:.9rem;padding:10px 13px;border-radius:var(--r);
+  font-size:13px;line-height:1.6;display:none}
+.fb.show{display:block}
+.fb.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
+.fb.no{background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d}
+.qnav{display:flex;justify-content:space-between;align-items:center;
+  margin-top:1.3rem;padding-top:1.1rem;border-top:1px solid var(--border)}
+.btn{padding:8px 18px;border-radius:var(--r);font-size:13px;font-weight:600;
+  font-family:'Nunito',sans-serif;cursor:pointer;border:1.5px solid transparent;transition:all .12s}
+.btn-out{background:var(--surface);border-color:var(--border2);color:var(--ink2)}
+.btn-out:hover:not(:disabled){border-color:var(--ink);color:var(--ink)}
+.btn-pri{background:linear-gradient(135deg,#1a1a4e,#0f3460);color:#fff}
+.btn-pri:hover{opacity:.88}
+.btn:disabled{opacity:.35;cursor:default}
+.spinner{width:18px;height:18px;border:2px solid var(--border);
+  border-top-color:var(--ink);border-radius:50%;
+  animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:10px;
+  padding:2rem 1rem;color:var(--ink3);font-size:13px}
+#s-results{background:var(--paper)}
+.res-hero{background:linear-gradient(135deg,#0f0c29,#1a1a4e,#0f3460);
+  color:#fff;padding:1.8rem 1.3rem 1.5rem;text-align:center;position:relative;overflow:hidden}
+.rh-label{font-size:10px;font-weight:600;letter-spacing:2px;
+  text-transform:uppercase;opacity:.5;margin-bottom:.4rem;font-family:monospace}
+.rh-name{font-size:15px;opacity:.7;margin-bottom:1rem}
+.rh-grade{display:inline-block;padding:6px 22px;border-radius:30px;
+  font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;margin-bottom:.8rem}
+.g-exc{background:var(--exc-bg);color:var(--exc-txt)}
+.g-ep{background:var(--ep-bg);color:var(--ep-txt)}
+.g-ex{background:var(--ex-bg);color:var(--ex-txt)}
+.g-em{background:var(--em-bg);color:var(--em-txt)}
+.g-er{background:var(--er-bg);color:var(--er-txt)}
+.rh-big{font-family:'Nunito',sans-serif;font-size:52px;font-weight:800;
+  letter-spacing:-3px;line-height:1}
+.rh-pct{font-size:20px;opacity:.6}
+.rh-tag{font-size:13px;opacity:.55;margin-top:.25rem}
+.rh-meta{display:flex;justify-content:center;gap:14px;margin-top:.8rem;
+  font-size:11px;opacity:.4;font-family:monospace;flex-wrap:wrap}
+.res-body{padding:1.2rem 1.1rem;max-width:660px;margin:0 auto;width:100%;padding-bottom:2rem}
+.sec-head{font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--ink3);margin:1.3rem 0 .65rem}
+.dom-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.5rem}
+.dom-card{background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--rl);padding:1rem;position:relative;overflow:hidden}
+.dom-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.dca-bio::before{background:var(--bio-mid)}.dca-chem::before{background:var(--chem-mid)}
+.dca-phys::before{background:var(--phys-mid)}.dca-ws::before{background:var(--ws-mid)}
+.dom-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--ink3);margin-bottom:.4rem}
+.dom-big{font-family:'Nunito',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.dom-den{font-size:13px;color:var(--ink3)}
+.dom-pct{font-size:12px;color:var(--ink3);margin:.2rem 0 .5rem}
+.dom-bar{height:5px;border-radius:3px;background:var(--border)}
+.dom-fill{height:100%;border-radius:3px;transition:width .6s}
+.dba-bio .dom-fill{background:var(--bio-mid)}.dba-chem .dom-fill{background:var(--chem-mid)}
+.dba-phys .dom-fill{background:var(--phys-mid)}.dba-ws .dom-fill{background:var(--ws-mid)}
+.grade-scale{background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--rl);padding:1rem;margin-bottom:.5rem}
+.gs-row{display:flex;align-items:center;gap:10px;padding:5px 0;
+  border-bottom:1px solid var(--border);font-size:12px}
+.gs-row:last-child{border-bottom:none}
+.gs-pill{font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;
+  min-width:90px;text-align:center;font-family:'Nunito',sans-serif}
+.gs-range{color:var(--ink3);font-family:monospace;font-size:11px;flex:1}
+.gs-you{font-size:11px;font-weight:600;color:#16a34a}
+.study-dom{background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--rl);margin-bottom:10px;overflow:hidden}
+.study-hdr{display:flex;align-items:center;gap:8px;padding:.8rem 1rem;
+  border-bottom:1px solid var(--border)}
+.study-score{font-size:11px;color:var(--ink3);font-family:monospace}
+.p-high{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:#fee2e2;color:#991b1b;text-transform:uppercase}
+.p-med{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:#fef3c7;color:#92400e;text-transform:uppercase}
+.p-good{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:#dcfce7;color:#166534;text-transform:uppercase}
+.study-body{padding:.85rem 1rem}
+.study-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--ink3);margin-bottom:.5rem}
+.topic-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.85rem}
+.ttag{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--paper);
+  border:1.5px solid var(--border2);color:var(--ink2);text-decoration:none}
+a.ttag:hover{border-color:var(--chem-mid);background:var(--chem-bg);color:var(--chem)}
+.res-links{display:flex;flex-direction:column;gap:5px}
+.rlink{display:flex;align-items:center;gap:9px;padding:8px 11px;
+  border:1.5px solid var(--border);border-radius:var(--r);text-decoration:none;
+  color:var(--ink);background:var(--paper);font-size:12px}
+.rlink:hover{border-color:var(--ink);background:var(--surface)}
+.rlink-body{flex:1}.rlink-name{font-weight:600;font-size:12px}
+.rlink-desc{font-size:11px;color:var(--ink3);margin-top:1px}
+.rtag{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;
+  text-transform:uppercase;flex-shrink:0;background:#dcfce7;color:#166534}
+.missed-item{background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:.8rem 1rem;margin-bottom:7px;font-size:12px}
+.missed-q{font-size:13px;color:var(--ink2);margin:.3rem 0;line-height:1.4}
+.missed-wrong{color:#dc2626;font-size:11px}
+.missed-right{color:#16a34a;font-weight:600;font-size:11px;margin-top:2px}
+.action-btns{display:flex;flex-direction:column;gap:8px;margin:1.2rem 0}
+.btn-full{width:100%;padding:11px;font-size:13px;text-align:center;
+  border-radius:var(--r);font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;border:none}
+.btn-dl{background:linear-gradient(135deg,#1a1a4e,#0f3460);color:#fff}
+.btn-retry{background:var(--surface);color:var(--ink);border:1.5px solid var(--border2)!important}
+.sent-note{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:var(--r);
+  padding:.85rem 1rem;font-size:12px;color:#14532d;line-height:1.55}
+.sent-note strong{display:block;margin-bottom:.2rem;font-size:13px}
+@media(max-width:480px){.dom-grid{grid-template-columns:1fr}}
+.fade-in{animation:fi .22s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="s-login" class="screen active">
+  <div class="stars-bg" id="stars"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div style="font-size:28px">🔬</div>
+      <div>
+        <div class="logo-name">Year 6 Science</div>
+        <div class="logo-sub">NLCS Jeju · Adaptive Practice</div>
+      </div>
+    </div>
+    <h1>Sign in to begin</h1>
+    <p>AI generates questions just for you. Stop whenever you like.</p>
+    <div class="field">
+      <label>Your name</label>
+      <input type="text" id="inp-name" placeholder="e.g. James Park" autocomplete="name"/>
+    </div>
+    <div class="field">
+      <label>Class</label>
+      <select id="inp-class">
+        <option value="">— select —</option>
+        <option>6A</option><option>6B</option><option>6C</option>
+        <option>6D</option><option>6E</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Focus area</label>
+      <select id="inp-domain">
+        <option value="all">All topics (mixed)</option>
+        <option value="Biology">Biology</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Physics">Physics</option>
+        <option value="Working Scientifically">Working Scientifically</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Question style</label>
+      <select id="inp-style">
+        <option value="mixed">Mixed styles</option>
+        <option value="pts">PTS format</option>
+        <option value="cambridge">Cambridge style</option>
+      </select>
+    </div>
+    <button class="btn-start" onclick="startQuiz()">Start 🔬</button>
+    <p class="login-note">Questions adapt to your level. Results saved automatically.</p>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="s-quiz" class="screen">
+  <div class="qhdr">
+    <div>
+      <div class="qhdr-name" id="hdr-name"></div>
+      <div class="qhdr-cls" id="hdr-cls"></div>
+    </div>
+    <div class="qhdr-prog">
+      <div class="prog-track"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    </div>
+    <div class="qhdr-count" id="hdr-count">Q1</div>
+    <div class="diff-chip dc-medium" id="hdr-diff">Medium</div>
+    <div class="streak-chip" id="streak">🔥 <span id="streak-n">0</span></div>
+    <button class="btn-stop" onclick="finishNow()">Finish &amp; see results</button>
+  </div>
+  <div class="qwrap" id="qwrap"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="s-results" class="screen">
+  <div class="res-hero">
+    <div class="rh-label">Practice Complete</div>
+    <div class="rh-name" id="rh-name"></div>
+    <div class="rh-grade" id="rh-grade"></div>
+    <div style="display:flex;justify-content:center;align-items:baseline;gap:8px;margin-bottom:.25rem">
+      <div class="rh-big" id="rh-score"></div>
+      <div class="rh-pct" id="rh-pct"></div>
+    </div>
+    <div class="rh-tag" id="rh-tag"></div>
+    <div class="rh-meta" id="rh-meta"></div>
+  </div>
+  <div class="res-body">
+    <p class="sec-head">📊 Score by domain</p>
+    <div class="dom-grid" id="rd-domains"></div>
+    <p class="sec-head">🎯 Grade scale</p>
+    <div class="grade-scale" id="rd-scale"></div>
+    <div class="action-btns">
+      <button class="btn-full btn-dl" onclick="dlCSV()">⬇ Download results</button>
+      <button class="btn-full btn-retry" onclick="showScreen('login')">↺ Try again</button>
+    </div>
+    <div class="sent-note">
+      <strong>✅ Results sent to your teacher</strong>
+      Your score and domain breakdown have been recorded.
+    </div>
+    <p class="sec-head">📖 What to study next</p>
+    <div id="rd-study"></div>
+    <p class="sec-head">❌ Questions to review</p>
+    <div id="rd-review"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
+const GEMINI_KEY      = 'AIzaSyCC0Af2Tw-ZUNZ1pYwFf3qODP6OK9vDJvk';
+const SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzJbsGAELB71C0FYnP5NwugHlKj_8fjvg05tiiTvZENQc-c51V7uBVobZKQJ4N0EBrW/exec';
+
+// ═══════════════════════════════════════════════════════
+// GRADES — NLCS Jeju descriptors
+// ═══════════════════════════════════════════════════════
+const GRADES = [
+  {label:'Exceeding', min:81,cls:'g-exc',bg:'var(--exc-bg)',txt:'var(--exc-txt)',bdr:'var(--exc-bdr)'},
+  {label:'Expected+', min:70,cls:'g-ep', bg:'var(--ep-bg)', txt:'var(--ep-txt)', bdr:'var(--ep-bdr)'},
+  {label:'Expected',  min:60,cls:'g-ex', bg:'var(--ex-bg)', txt:'var(--ex-txt)', bdr:'var(--ex-bdr)'},
+  {label:'Expected\u2212',min:50,cls:'g-em',bg:'var(--em-bg)',txt:'var(--em-txt)',bdr:'var(--em-bdr)'},
+  {label:'Emerging',  min:0, cls:'g-er', bg:'var(--er-bg)', txt:'var(--er-txt)', bdr:'var(--er-bdr)'},
+];
+const getGrade  = pct => GRADES.find(g=>pct>=g.min)||GRADES[4];
+const gradePill = pct => {
+  const g=getGrade(pct);
+  return `<span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;background:${g.bg};color:${g.txt};border:1px solid ${g.bdr};font-family:'Nunito',sans-serif">${g.label}</span>`;
+};
+
+// ═══════════════════════════════════════════════════════
+// FALLBACK BANK — 30 Year 6 questions for offline use
+// ═══════════════════════════════════════════════════════
+const FALLBACK = [
+  {d:'Biology',diff:1,q:'What are the four main components of blood?',o:['Red blood cells, white blood cells, platelets and plasma','Red cells, blue cells, platelets and water','Arteries, veins, capillaries and plasma','Oxygen, carbon dioxide, glucose and plasma'],a:0,e:'Blood is made of red blood cells (carry oxygen), white blood cells (fight infection), platelets (clotting) and plasma (liquid that carries everything).'},
+  {d:'Biology',diff:1,q:'What is the function of the heart?',o:['To produce blood','To filter waste from the blood','To pump blood around the body','To absorb oxygen from the lungs'],a:2,e:'The heart is a muscular pump that circulates blood around the body, delivering oxygen and nutrients to cells and removing waste products.'},
+  {d:'Biology',diff:2,q:'Which side of the heart pumps oxygenated blood to the body?',o:['The right side','The left side','Both sides equally','Neither — the lungs do this'],a:1,e:'The left ventricle pumps oxygenated blood at high pressure through the aorta to the body. The right side pumps deoxygenated blood to the lungs.'},
+  {d:'Biology',diff:2,q:'What is the difference between arteries, veins and capillaries?',o:['They are all the same size','Arteries carry blood away from heart (thick walls), veins carry blood to heart, capillaries are tiny and allow exchange','Veins carry oxygenated blood, arteries carry deoxygenated blood','Capillaries are the largest blood vessels'],a:1,e:'Arteries (away from heart, thick muscular walls), veins (toward heart, valves prevent backflow), capillaries (one cell thick — allow oxygen/nutrient exchange with tissues).'},
+  {d:'Biology',diff:3,q:'A student measures their heart rate before exercise (72 bpm) and after (145 bpm). Why does heart rate increase during exercise?',o:['The heart gets bigger during exercise','Muscles need more oxygen and glucose — heart beats faster to deliver them more quickly','The blood becomes thicker during exercise','Exercise damages the heart temporarily'],a:1,e:'During exercise muscles respire faster, needing more oxygen and glucose. The heart increases its rate and stroke volume to circulate more oxygenated blood to the muscles per minute.'},
+  {d:'Biology',diff:2,q:'What is the role of white blood cells in the immune system?',o:['To carry oxygen around the body','To help blood clot after injury','To produce insulin','To engulf pathogens and produce antibodies to fight infection'],a:3,e:'White blood cells (leukocytes) defend against infection. Phagocytes engulf and destroy pathogens; lymphocytes produce specific antibodies that neutralise them.'},
+  {d:'Biology',diff:1,q:'What is variation?',o:['When all organisms of a species are identical','Differences between individuals of the same species','The process of evolution','A type of reproduction'],a:1,e:'Variation refers to the differences between individuals of the same species. It can be inherited (genetic) or caused by the environment.'},
+  {d:'Biology',diff:2,q:'What is natural selection?',o:['Humans choosing which animals to breed','Individuals with favourable adaptations survive and reproduce more, passing traits to offspring','All members of a species changing at the same time','Animals choosing their own mates'],a:1,e:'Natural selection: individuals with advantageous traits are more likely to survive and reproduce, passing those traits to offspring. Over many generations this shapes the species.'},
+  {d:'Biology',diff:3,q:'Fossil evidence shows that modern horses evolved from much smaller ancestors. How does this support the theory of evolution?',o:['It proves horses were created small and grew larger','It shows gradual change over millions of years — individuals with advantageous traits (larger size) survived and reproduced more','It shows horses can change size during their lifetime','Fossils have nothing to do with evolution'],a:1,e:'Fossils provide a record of change over time. The gradual size increase in horse fossils is consistent with natural selection acting over millions of years on heritable variations.'},
+  {d:'Chemistry',diff:1,q:'What is the difference between a pure substance and a mixture?',o:['They are the same thing','A pure substance contains only one type of particle; a mixture contains two or more substances not chemically joined','A mixture is always liquid','A pure substance always contains water'],a:1,e:'A pure substance (element or compound) contains only one type of particle with fixed properties. A mixture contains two or more substances that can be separated by physical means.'},
+  {d:'Chemistry',diff:1,q:'What is an atom?',o:['The smallest particle of a mixture','The smallest particle of an element that retains its chemical properties','A type of molecule','The same as a compound'],a:1,e:'An atom is the smallest unit of an element. It consists of a nucleus (protons and neutrons) surrounded by electrons. Atoms of the same element have the same number of protons.'},
+  {d:'Chemistry',diff:2,q:'A student heats copper carbonate and observes: the green powder turns black and a gas is produced. What type of change is this?',o:['A reversible physical change','A chemical reaction — new substances (black copper oxide and carbon dioxide gas) are formed','A change of state','Dissolving'],a:1,e:'Heating copper carbonate causes a chemical reaction (thermal decomposition): copper carbonate \u2192 copper oxide + carbon dioxide. New substances are formed so it is irreversible.'},
+  {d:'Chemistry',diff:2,q:'What does the periodic table organise?',o:['All known mixtures','All elements arranged by atomic number, with similar elements in the same column (group)','All compounds in order of mass','All metals only'],a:1,e:'The periodic table arranges all known elements by atomic number. Elements in the same vertical column (group) have similar chemical properties due to having the same number of outer electrons.'},
+  {d:'Chemistry',diff:3,q:'Magnesium reacts with hydrochloric acid: Mg + 2HCl \u2192 MgCl\u2082 + H\u2082. What evidence in this equation shows mass is conserved?',o:['The arrow shows direction','The subscripts tell us temperature','The number of each type of atom is the same on both sides of the equation','The equation has two reactants'],a:2,e:'Conservation of mass: atoms are neither created nor destroyed in chemical reactions. The balanced equation shows the same number of Mg, H and Cl atoms on both sides — mass is conserved.'},
+  {d:'Physics',diff:1,q:'What is a complete circuit?',o:['A circuit with a switch','A circuit where there is an unbroken path for current to flow from the cell, through components, and back','A circuit with a bulb','Any circuit with more than two components'],a:1,e:'A complete (closed) circuit provides an unbroken conducting path for current to flow. If there is any gap, current cannot flow and components do not work.'},
+  {d:'Physics',diff:1,q:'What happens to the bulbs in a series circuit if one bulb breaks?',o:['Only that bulb goes out','All bulbs go out because the circuit is broken','The other bulbs get brighter','Nothing changes'],a:1,e:'In a series circuit all components are connected in one loop. If one bulb breaks it creates a gap — the circuit is incomplete and all bulbs go out.'},
+  {d:'Physics',diff:2,q:'A student adds more cells to a series circuit. What happens to the brightness of the bulbs?',o:['They get dimmer','They get brighter because voltage increases, so current increases','Nothing changes','They go out'],a:1,e:'Adding more cells increases the voltage (potential difference) in the circuit. By Ohm\'s Law, increased voltage with the same resistance means increased current, making the bulbs brighter.'},
+  {d:'Physics',diff:2,q:'What does a voltmeter measure and how is it connected in a circuit?',o:['Current, connected in series','Resistance, connected anywhere','Voltage (potential difference) across a component, connected in parallel with it','Power, connected at the end of a circuit'],a:2,e:'A voltmeter measures potential difference (voltage) in volts. It is connected in parallel with the component being measured — the high resistance of a voltmeter means it barely affects the circuit.'},
+  {d:'Physics',diff:3,q:'In a parallel circuit, a student adds a second identical branch with a bulb. What happens to the total current from the battery and the brightness of each bulb?',o:['Total current halves, bulbs get brighter','Total current doubles, each bulb stays the same brightness','Total current stays the same, bulbs get dimmer','Total current halves, each bulb stays the same brightness'],a:1,e:'In parallel circuits each branch receives the full voltage. Each bulb operates at the same voltage as before (same brightness), but now current flows through two branches so total current doubles.'},
+  {d:'Physics',diff:1,q:'How does light travel?',o:['In curved waves','In straight lines','Only through transparent materials','By bouncing off all surfaces'],a:1,e:'Light travels in straight lines (rectilinear propagation). This is why shadows form, why you cannot see around corners, and why we can use ray diagrams to model light behaviour.'},
+  {d:'Physics',diff:2,q:'A student shines light at a mirror at 40\u00b0 to the normal. At what angle does it reflect?',o:['80\u00b0','20\u00b0','40\u00b0','90\u00b0'],a:2,e:'The law of reflection: angle of incidence = angle of reflection. Both angles are measured from the normal (perpendicular to the surface). So the reflected ray is also at 40\u00b0 to the normal.'},
+  {d:'Physics',diff:2,q:'Why does a straw appear bent when placed in a glass of water?',o:['The water bends the straw physically','Light refracts (changes speed and direction) as it crosses the boundary between water and air','The straw floats to a different position','Your eyes see it from the wrong angle'],a:1,e:'Refraction: light changes speed when it moves between media of different densities (water to air). This change in speed causes the light to change direction, making the straw appear displaced.'},
+  {d:'Physics',diff:3,q:'A student investigates how shadow length changes with the distance between a light source and an object. As the distance increases, the shadow gets shorter. Why?',o:['The object gets smaller further away','Light rays from a closer source spread more — they hit the screen at a wider angle creating a larger shadow; from further away rays are more parallel creating a smaller shadow','The screen gets bigger','Light travels faster at greater distances'],a:1,e:'A nearby point source of light creates diverging rays that cast a large shadow (umbra and penumbra). As distance increases the rays become more parallel, reducing shadow size. This explains why the Sun (very distant) casts sharper shadows than a nearby lamp.'},
+  {d:'Working Scientifically',diff:1,q:'What is a hypothesis?',o:['The final conclusion of an experiment','A testable prediction based on scientific knowledge, made before the experiment','A type of graph','The equipment needed for an experiment'],a:1,e:'A hypothesis is a testable, specific prediction written before the experiment. It is based on prior knowledge and usually takes the form "If X then Y because Z."'},
+  {d:'Working Scientifically',diff:2,q:'A student investigates how acid concentration affects the rate of reaction with marble chips. They measure volume of CO\u2082 produced every 30 seconds. What type of graph should they draw?',o:['Pie chart — to show proportions','Bar chart — for separate categories','Line graph — continuous data over time showing rate of reaction','Scatter graph — to show correlation between two variables'],a:2,e:'Volume of gas produced over time is continuous data. A line graph shows how the rate changes over time (steep gradient = fast reaction, flat = reaction complete). Multiple lines allow comparison of concentrations.'},
+  {d:'Working Scientifically',diff:2,q:'A student\'s results: 2.3, 2.4, 2.3, 5.8, 2.4 seconds. They calculate a mean of 3.04 s. What error have they made?',o:['They added incorrectly','They have included the anomalous result (5.8) in the mean calculation — it should be excluded','They should use more decimal places','The mean is too low'],a:1,e:'5.8 is clearly anomalous (far outside 2.3\u20132.4). It should be identified, noted and excluded. Correct mean = (2.3+2.4+2.3+2.4)\u00f74 = 2.35 s. Including anomalies makes the mean unrepresentative.'},
+  {d:'Working Scientifically',diff:3,q:'A student concludes: "The higher the temperature, the faster the rate of reaction." Their data only covers 20\u00b0C to 60\u00b0C. What is the limitation of this conclusion?',o:['Nothing \u2014 it is a perfect conclusion','The conclusion cannot be extended beyond the tested range \u2014 they do not know what happens above 60\u00b0C or below 20\u00b0C','They should have used more decimal places','The conclusion is too short'],a:1,e:'Scientific conclusions must be limited to the range of data collected. The relationship may not hold at very high temperatures (enzyme denaturing, for example) or very low ones. A valid conclusion states the specific range tested.'},
+  {d:'Biology',diff:2,q:'What is the difference between inherited and environmental variation? Give an example of each.',o:['They mean the same thing','Inherited: passed from parents via genes (e.g. eye colour, blood group); Environmental: caused by surroundings/lifestyle (e.g. scar, language spoken)','Inherited means learned; environmental means genetic','Only plants show environmental variation'],a:1,e:'Inherited variation is coded in genes passed from parents (blood group, eye colour). Environmental variation is caused by the organism\'s surroundings or experiences (scars, tattoos, spoken language). Many traits (e.g. height) are influenced by both.'},
+  {d:'Chemistry',diff:1,q:'What are the three subatomic particles in an atom and where are they found?',o:['Protons and neutrons only, both in nucleus','Protons (positive, nucleus), neutrons (neutral, nucleus), electrons (negative, shells around nucleus)','Electrons in nucleus, protons in shells','Protons are positive and found in the shells'],a:1,e:'Atoms consist of: protons (+1 charge) and neutrons (neutral) in the nucleus; electrons (-1 charge) in shells/orbitals around the nucleus. The number of protons = atomic number = identity of the element.'},
+  {d:'Physics',diff:1,q:'What is meant by "current" in an electrical circuit?',o:['The voltage of the battery','The flow of electrical charge (electrons) around the circuit, measured in amperes (A)','The resistance of a component','The power used by a bulb'],a:1,e:'Electric current is the rate of flow of charge (electrons) around a circuit. It is measured in amperes (A) using an ammeter connected in series. Current flows from negative to positive terminal of the cell.'},
+  {d:'Working Scientifically',diff:1,q:'Why is it important to control variables in an experiment?',o:['To make the experiment take longer','To ensure that only the independent variable affects the dependent variable, making it a fair test','To use more equipment','So results are always the same'],a:1,e:'Controlling variables ensures a fair test. If multiple things change at once you cannot know which caused the result. Only the independent variable should change; everything else must stay the same.'},
+];
+
+let FALLBACK_USED = new Set();
+function getFallback(domain, diff) {
+  let pool = FALLBACK.filter((q,i)=>
+    !FALLBACK_USED.has(i) && (domain==='all'||q.d===domain));
+  if(!pool.length){FALLBACK_USED.clear();pool=FALLBACK;}
+  const match = pool.filter(q=>q.diff===diff);
+  const src   = match.length ? match : pool;
+  const chosen = src[Math.floor(Math.random()*src.length)];
+  FALLBACK_USED.add(FALLBACK.indexOf(chosen));
+  return {...chosen,_fb:true};
+}
+
+// ═══════════════════════════════════════════════════════
+// ADAPTIVE ENGINE
+// ═══════════════════════════════════════════════════════
+let S = {};
+function targetDiff(theta){
+  if(theta<-0.8) return 1;
+  if(theta>1.5)  return 4;
+  if(theta>0.6)  return 3;
+  return 2;
+}
+function updateTheta(theta,correct,diff){
+  const step=0.45, dv={1:-1,2:0,3:.5,4:1}[diff]||0;
+  return correct
+    ? Math.min(3, theta+step*(1+dv*.3))
+    : Math.max(-3,theta-step*(1-dv*.2));
+}
+
+// ═══════════════════════════════════════════════════════
+// GEMINI — Year 6 UK curriculum topics
+// ═══════════════════════════════════════════════════════
+const TOPICS = {
+  Biology:[
+    'circulatory system: heart structure (four chambers, atria and ventricles), oxygenated vs deoxygenated blood, left side vs right side, valves prevent backflow',
+    'blood vessels: arteries (thick walls, carry blood away from heart), veins (valves, carry blood to heart), capillaries (one cell thick, allow exchange of oxygen and nutrients)',
+    'blood components: red blood cells (haemoglobin carries oxygen), white blood cells (phagocytes engulf pathogens, lymphocytes produce antibodies), platelets (clotting), plasma (carries dissolved substances)',
+    'the impact of diet, exercise, drugs and lifestyle on health: heart rate, fitness, smoking effects on lungs and circulation',
+    'living things classification: Linnaeus taxonomy, binomial nomenclature, kingdoms (animals, plants, fungi, bacteria, protists), vertebrates vs invertebrates, using dichotomous keys',
+    'microorganisms: bacteria, viruses, fungi — beneficial (yogurt, bread, antibiotics) and harmful (disease); how the body defends against infection',
+    'variation: inherited variation (genetic, e.g. eye colour, blood group) vs environmental variation (e.g. scars, language); continuous vs discontinuous variation',
+    'evolution and natural selection: Darwin\'s theory, survival of the fittest, adaptation, fossil evidence, antibiotic resistance as modern example of natural selection'
+  ],
+  Chemistry:[
+    'pure substances vs mixtures: elements, compounds, mixtures — properties and how to distinguish them; melting point as a test for purity',
+    'atomic structure: protons (positive, in nucleus), neutrons (neutral, in nucleus), electrons (negative, in shells); atomic number = number of protons; mass number = protons + neutrons',
+    'the periodic table: arranged by atomic number, groups (vertical columns, similar properties), periods (horizontal rows); metals vs non-metals; alkali metals (Group 1), halogens (Group 7), noble gases (Group 0)',
+    'chemical reactions and equations: reactants and products, word equations, symbol equations, conservation of mass (atoms not created or destroyed), balancing equations',
+    'types of reactions: combustion, oxidation, thermal decomposition, neutralisation, displacement; signs of chemical reaction (gas, colour change, temperature change, precipitate)',
+    'separating mixtures: filtration, evaporation, distillation, chromatography (Rf values), fractional distillation — matching technique to mixture type',
+    'acids and alkalis: pH scale (0-14), universal indicator, neutralisation reactions (acid + alkali \u2192 salt + water), common acids (HCl, H\u2082SO\u2084) and alkalis (NaOH)'
+  ],
+  Physics:[
+    'electrical circuits: complete circuits, series vs parallel circuits, effect of adding more cells or bulbs, circuit symbols and diagrams',
+    'measuring in circuits: current (amperes, ammeter in series), voltage/potential difference (volts, voltmeter in parallel), resistance (ohms); Ohm\'s Law V=IR',
+    'light: travels in straight lines, reflection (angle of incidence = angle of reflection), refraction (light bends when changing medium), total internal reflection',
+    'shadows: formed when opaque objects block light; umbra (total shadow) and penumbra (partial shadow); how distance from light source affects shadow size',
+    'the electromagnetic spectrum: radio waves, microwaves, infrared, visible light, ultraviolet, X-rays, gamma rays — order, uses and hazards',
+    'forces: balanced and unbalanced forces, resultant force, Newton\'s Laws of Motion (First: inertia; Second: F=ma; Third: action-reaction pairs)',
+    'pressure: P=F/A, explaining why sharp knives cut easily, why tractors have wide tyres, atmospheric pressure decreasing with altitude',
+    'space: gravity keeps planets in orbit, relationship between orbital radius and period, formation of the solar system, stars and galaxies'
+  ],
+  'Working Scientifically':[
+    'experimental design: independent variable, dependent variable, control variables, sample size, repeats for reliability, control experiments',
+    'hypotheses and predictions: forming a testable hypothesis, using scientific knowledge to justify a prediction',
+    'data collection and recording: designing tables, significant figures, precision vs accuracy, systematic vs random error',
+    'graphs and data analysis: choosing appropriate graph type, drawing lines of best fit, identifying anomalies, calculating gradients, interpolation vs extrapolation',
+    'conclusions and evaluations: relating conclusions to hypothesis, identifying limitations, suggesting improvements, distinguishing correlation from causation',
+    'scientific communication: using precise scientific vocabulary, interpreting data from tables and graphs, evaluating the strength of evidence'
+  ]
+};
+
+async function callGemini(domain, diff, theta, style) {
+  if(!GEMINI_KEY||GEMINI_KEY==='PASTE_YOUR_GEMINI_KEY_HERE') return null;
+  const topicList = TOPICS[domain]||TOPICS.Biology;
+  const topic = topicList[Math.floor(Math.random()*topicList.length)];
+  const diffGuide = {
+    1:'EASY — direct recall, one clear concept, short question, age 10-11',
+    2:'MEDIUM — understanding and application, may include a brief scenario, Year 6/PTS Level 10 expected level',
+    3:'HARD — analysis, applying knowledge to unfamiliar situations, interpreting data; Year 6 mastery/PTS Level 10 high score',
+    4:'EXTENSION — early KS3 content for very high ability Year 6, start explanation with \ud83d\ude80'
+  }[diff]||'MEDIUM';
+  const styleGuide = style==='pts'
+    ? 'GL Assessment PTS Level 10 style: 1-2 sentence scenario, tests ONE concept, all 4 options plausible, common misconceptions as distractors. Stems: "Which of these...", "A student finds...", "What is...", "Why does..."'
+    : style==='cambridge'
+    ? 'Cambridge Checkpoint Science style: write a 2-3 sentence experiment description, data table, or set of results in the "context" field, then ask a question that requires reading that context. Include at least one number or measurement.'
+    : Math.random()>.5
+      ? 'PTS Level 10 style: short focused scenario, one concept, misconception distractors'
+      : 'Cambridge Checkpoint style: brief data/experiment context in context field, then question about it';
+
+  const prompt=`Generate ONE science question for a Year 6 student (age 10-11) at NLCS Jeju International School, South Korea. This is a high-performing international school following the UK curriculum.
+
+Domain: ${domain}
+Topic: ${topic}
+Difficulty: ${diffGuide}
+Style: ${styleGuide}
+Student ability (theta=${theta.toFixed(1)}): ${theta>0.8?'above average \u2014 make it genuinely challenging':theta<-0.5?'below average \u2014 keep accessible but not trivial':'average Year 6 level'}
+
+RULES:
+- UK KS2/lower KS3 science only (no A-level content)
+- Exactly 4 options, ONE correct answer
+- Wrong options must be plausible misconceptions \u2014 not obviously wrong
+- Explanation: 1-2 clear sentences explaining WHY the answer is correct
+- Professional language appropriate for age 10-11
+
+Reply ONLY with JSON, nothing else:
+{"q":"question text","context":"scenario or data if Cambridge style \u2014 omit this key entirely if PTS style","o":["option A","option B","option C","option D"],"a":0,"e":"explanation"}
+
+"a" is the 0-based index of the correct answer.`;
+
+  try {
+    const r=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[{text:prompt}]}],
+          generationConfig:{temperature:0.8,maxOutputTokens:500}
+        }),
+        signal:AbortSignal.timeout(15000)
+      }
+    );
+    if(r.status===429){console.warn('Rate limit \u2014 using fallback');return null;}
+    if(!r.ok){console.warn('Gemini error',r.status);return null;}
+    const data=await r.json();
+    const raw=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const s=clean.indexOf('{'),e=clean.lastIndexOf('}');
+    if(s<0||e<0) return null;
+    const p=JSON.parse(clean.slice(s,e+1));
+    if(!p.q||!p.o||p.o.length!==4||p.a===undefined) return null;
+    return {d:domain,diff,q:p.q,context:p.context||null,o:p.o,a:parseInt(p.a),e:p.e||'',ai:true,ext:diff===4};
+  } catch(err){
+    console.warn('Gemini error:',err.message||err);return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// QUIZ FLOW
+// ═══════════════════════════════════════════════════════
+function startQuiz(){
+  const name=document.getElementById('inp-name').value.trim();
+  const cls =document.getElementById('inp-class').value;
+  if(!name){document.getElementById('inp-name').focus();return;}
+  if(!cls) {document.getElementById('inp-class').focus();return;}
+  S={name,cls,
+    domain:document.getElementById('inp-domain').value,
+    style: document.getElementById('inp-style').value,
+    theta:0,streak:0,maxStreak:0,
+    qs:[],currentQ:null,qNum:0,
+    startTime:Date.now(),qStart:Date.now()};
+  FALLBACK_USED.clear();
+  const sb=document.getElementById('stars');sb.innerHTML='';
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div');s.className='star-dot';
+    const sz=Math.random()*2.5+.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+1).toFixed(1)}s;--dl:${(Math.random()*3).toFixed(1)}s`;
+    sb.appendChild(s);
+  }
+  showScreen('quiz');
+  loadQuestion();
+}
+
+function showLoading(msg){
+  document.getElementById('qwrap').innerHTML=
+    `<div class="loading-row fade-in"><div class="spinner"></div><span>${msg}</span></div>`;
+}
+
+async function loadQuestion(){
+  showLoading('Generating question with Gemini AI\u2026');
+  const domains=['Biology','Chemistry','Physics','Working Scientifically'];
+  const domain=S.domain==='all'
+    ? domains[Math.floor(Math.random()*domains.length)]
+    : S.domain;
+  const diff=targetDiff(S.theta);
+  let q=await callGemini(domain,diff,S.theta,S.style);
+  if(!q) q=getFallback(domain,diff);
+  S.currentQ=q;
+  S.qNum+=1;
+  S.qStart=Date.now();
+  renderQuestion(q);
+}
+
+function renderQuestion(q){
+  const n=S.qNum;
+  const dcb={Biology:'db-bio',Chemistry:'db-chem',Physics:'db-phys','Working Scientifically':'db-ws'};
+  const dchip={1:'dc-easy Easy',2:'dc-medium Medium',3:'dc-hard Hard',4:'dc-ext Extension'};
+  const [dcls,dlbl]=(dchip[q.diff]||'dc-medium Medium').split(' ');
+  document.getElementById('hdr-name').textContent=S.name;
+  document.getElementById('hdr-cls').textContent=S.cls;
+  document.getElementById('hdr-count').textContent=`Q${n}`;
+  document.getElementById('prog').style.width=Math.min(95,n*4)+'%';
+  document.getElementById('hdr-diff').textContent=q.ext?'\u2605 Extension':dlbl;
+  document.getElementById('hdr-diff').className='diff-chip '+(q.ext?'dc-ext':dcls);
+  const streak=document.getElementById('streak');
+  if(S.streak>=3){streak.classList.add('show');document.getElementById('streak-n').textContent=S.streak;}
+  else streak.classList.remove('show');
+  const letters=['A','B','C','D'];
+  const ctxHtml=q.context
+    ?`<div class="q-ctx"><div class="q-ctx-lbl">\ud83d\udccb Read this first</div>${q.context}</div>`:'';
+  const hintHtml=q.ext
+    ?'<div class="q-hint">\ud83d\ude80 <strong>Extension challenge</strong> \u2014 this goes beyond Year 6. Give it your best try!</div>':'';
+  const aiBadge=q.ai&&!q._fb?'<span class="ai-chip">AI</span>':(q._fb?'<span class="fb-chip">Static</span>':'');
+  const optsHtml=q.o.map((o,i)=>
+    `<button class="opt" onclick="pick(${i})">
+      <span class="opt-let">${letters[i]}</span><span>${o}</span>
+    </button>`).join('');
+  document.getElementById('qwrap').innerHTML=`
+    <div class="fade-in">
+      <div class="q-num">Question ${n}</div>
+      <div class="dom-badge ${dcb[q.d]||'db-bio'}">${q.d}${aiBadge}</div>
+      ${ctxHtml}
+      <div class="q-text">${q.q}</div>
+      ${hintHtml}
+      <div class="opts" id="opts">${optsHtml}</div>
+      <div class="fb" id="fb"></div>
+      <div class="qnav" id="qnav">
+        <button class="btn btn-out" onclick="goBack()" ${n<=1?'disabled':''}>← Back</button>
+        <button class="btn btn-out" id="btn-next" disabled>Choose an answer</button>
+      </div>
+    </div>`;
+}
+
+function pick(i){
+  if(!S.currentQ) return;
+  const q=S.currentQ;
+  document.querySelectorAll('.opt').forEach((b,idx)=>{
+    b.classList.add('locked');
+    if(idx===q.a) b.classList.add('correct');
+    else if(idx===i&&i!==q.a) b.classList.add('wrong');
+  });
+  document.querySelectorAll('.opt-let').forEach((l,idx)=>{
+    if(idx===q.a) l.textContent='\u2713';
+    else if(idx===i&&i!==q.a) l.textContent='\u2717';
+  });
+  const correct=i===q.a;
+  const elapsed=Date.now()-S.qStart;
+  S.theta=updateTheta(S.theta,correct,q.diff);
+  if(correct){S.streak++;S.maxStreak=Math.max(S.maxStreak,S.streak);}else S.streak=0;
+  S.qs.push({q,chosen:i,correct,timeMs:elapsed});
+  const fb=document.getElementById('fb');
+  fb.className='fb show '+(correct?'ok':'no');
+  fb.textContent=(correct?'\u2713 Correct! ':'\u2717 Not quite \u2014 ')+q.e;
+  const btn=document.getElementById('btn-next');
+  btn.textContent='Next \u2192';
+  btn.className='btn btn-pri';
+  btn.disabled=false;
+  btn.onclick=()=>loadQuestion();
+}
+
+function goBack(){
+  if(S.qs.length>0) S.qs.pop();
+  S.qNum=Math.max(0,S.qNum-1);
+  S.theta=S.qs.length>0?updateTheta(S.theta,false,2):0;
+  loadQuestion();
+}
+
+function finishNow(){
+  if(S.qs.length===0){alert('Answer at least one question first!');return;}
+  showResults();
+}
+
+// ═══════════════════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════════════════
+function showResults(){
+  showScreen('results');
+  const done=S.qs;
+  const right=done.filter(e=>e.correct).length;
+  const total=done.length;
+  const pct=total>0?Math.round(right/total*100):0;
+  const elapsed=Math.round((Date.now()-S.startTime)/1000);
+  const mins=Math.floor(elapsed/60),secs=elapsed%60;
+  const grade=getGrade(pct);
+  const aiCount=done.filter(e=>e.q.ai&&!e.q._fb).length;
+  const gel=document.getElementById('rh-grade');
+  gel.textContent=grade.label;gel.className='rh-grade '+grade.cls;
+  document.getElementById('rh-name').textContent=S.name+' \u00b7 '+S.cls;
+  document.getElementById('rh-score').textContent=right+'/'+total;
+  document.getElementById('rh-pct').textContent=pct+'%';
+  document.getElementById('rh-tag').textContent=
+    [[81,'Fantastic \u2014 Exceeding!'],[70,'Great work \u2014 above expected!'],[60,'Working at expected level'],[50,'Keep going \u2014 almost there!'],[0,'Every question helps \u2014 keep practising']]
+    .find(([t])=>pct>=t)[1];
+  document.getElementById('rh-meta').innerHTML=
+    `<span>${mins}m ${secs}s</span><span>\u00b7</span><span>Streak: ${S.maxStreak}</span><span>\u00b7</span><span>${aiCount} AI questions</span><span>\u00b7</span><span>\u03b8 ${S.theta.toFixed(2)}</span>`;
+
+  const domains=['Biology','Chemistry','Physics','Working Scientifically'];
+  const dInfo={Biology:{ac:'dca-bio',ba:'dba-bio'},Chemistry:{ac:'dca-chem',ba:'dba-chem'},Physics:{ac:'dca-phys',ba:'dba-phys'},'Working Scientifically':{ac:'dca-ws',ba:'dba-ws'}};
+  document.getElementById('rd-domains').innerHTML=domains.map(dm=>{
+    const dqs=done.filter(e=>e.q.d===dm);if(!dqs.length)return'';
+    const dc=dqs.filter(e=>e.correct).length,dp=Math.round(dc/dqs.length*100);
+    const {ac,ba}=dInfo[dm];
+    return `<div class="dom-card ${ac} ${ba}">
+      <div class="dom-lbl">${dm}</div>
+      <div style="display:flex;align-items:baseline;gap:4px">
+        <div class="dom-big">${dc}</div><div class="dom-den">/ ${dqs.length}</div>
+      </div>
+      <div class="dom-pct">${dp}% correct</div>
+      <div class="dom-bar"><div class="dom-fill" style="width:${dp}%"></div></div>
+      ${gradePill(dp)}
+    </div>`;
+  }).join('');
+
+  document.getElementById('rd-scale').innerHTML=GRADES.map(g=>{
+    const isYours=grade.label===g.label;
+    const range=g===GRADES[0]?'above 80%':g===GRADES[1]?'70\u201380%':g===GRADES[2]?'60\u201369%':g===GRADES[3]?'50\u201359%':'below 50%';
+    return `<div class="gs-row">
+      <span class="gs-pill" style="background:${g.bg};color:${g.txt};border:1px solid ${g.bdr};font-family:'Nunito',sans-serif;font-weight:700">${g.label}</span>
+      <span class="gs-range">${range}</span>
+      ${isYours?`<span class="gs-you">\u2190 your score (${pct}%)</span>`:''}
+    </div>`;
+  }).join('');
+
+  const resources={
+    Biology:[
+      {name:'BBC Bitesize \u2014 KS3 Science',desc:'Circulatory system, classification, evolution, microorganisms',url:'https://www.bbc.co.uk/bitesize/subjects/zng4d2p'},
+      {name:'Cognitoedu \u2014 KS3 Biology',desc:'Free video lessons for all KS3 Biology topics',url:'https://cognitoedu.org/course/b1-ks3-default'},
+      {name:'Seneca Learning \u2014 KS3 Science',desc:'Free adaptive quizzes covering Year 6/KS3 Biology',url:'https://senecalearning.com/en-GB/revision-notes/ks3/science/national-curriculum'},
+    ],
+    Chemistry:[
+      {name:'BBC Bitesize \u2014 KS3 Chemistry',desc:'Atoms, periodic table, reactions, acids and alkalis',url:'https://www.bbc.co.uk/bitesize/subjects/zng4d2p'},
+      {name:'Cognitoedu \u2014 KS3 Chemistry',desc:'Free video lessons on atomic structure and reactions',url:'https://cognitoedu.org/course/b1-ks3-default'},
+      {name:'Seneca Learning \u2014 KS3 Science',desc:'Free adaptive quizzes on chemistry topics',url:'https://senecalearning.com/en-GB/revision-notes/ks3/science/national-curriculum'},
+    ],
+    Physics:[
+      {name:'BBC Bitesize \u2014 KS3 Physics',desc:'Electricity, light, forces, space and waves',url:'https://www.bbc.co.uk/bitesize/subjects/zng4d2p'},
+      {name:'Cognitoedu \u2014 KS3 Physics',desc:'Free video lessons on circuits, light and forces',url:'https://cognitoedu.org/course/b1-ks3-default'},
+      {name:'PhET \u2014 Circuit simulations',desc:'Build and test circuits interactively',url:'https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc'},
+    ],
+    'Working Scientifically':[
+      {name:'BBC Bitesize \u2014 Scientific Skills',desc:'Variables, graphs, conclusions and evaluations',url:'https://www.bbc.co.uk/bitesize/subjects/zng4d2p'},
+      {name:'Oak National Academy \u2014 KS3 Science',desc:'Lessons on experimental design and data analysis',url:'https://www.thenational.academy/teachers/programmes/science-secondary-ks3/units'},
+      {name:'Seneca Learning \u2014 KS3 Science',desc:'Free quizzes on scientific skills',url:'https://senecalearning.com/en-GB/revision-notes/ks3/science/national-curriculum'},
+    ],
+  };
+  const dcb={Biology:'db-bio',Chemistry:'db-chem',Physics:'db-phys','Working Scientifically':'db-ws'};
+  document.getElementById('rd-study').innerHTML=domains.map(dm=>{
+    const dqs=done.filter(e=>e.q.d===dm);if(!dqs.length)return'';
+    const dc=dqs.filter(e=>e.correct).length,dp=Math.round(dc/dqs.length*100);
+    const missed=dqs.filter(e=>!e.correct);
+    const [priority,pCls]=dp<50?['High priority','p-high']:dp<70?['Needs work','p-med']:['Looking good','p-good'];
+    const seen=new Set();
+    const tags=missed.length===0
+      ?'<span class="ttag" style="color:#16a34a">\u2713 All correct!</span>'
+      :missed.slice(0,4).map(e=>{
+          const words=e.q.q.replace(/[^a-zA-Z\s]/g,'').split(/\s+/).slice(0,5).join(' ');
+          const label=e.q.q.length>50?e.q.q.slice(0,48)+'\u2026':e.q.q;
+          if(seen.has(label))return'';seen.add(label);
+          return `<a class="ttag" href="https://www.bbc.co.uk/bitesize/search?q=${encodeURIComponent(words)}" target="_blank" rel="noopener">${label} \u2197</a>`;
+        }).filter(Boolean).join('');
+    const links=(resources[dm]||[]).slice(0,dp>=70?2:3).map(l=>
+      `<a class="rlink" href="${l.url}" target="_blank" rel="noopener">
+        <span class="rlink-body"><div class="rlink-name">${l.name}</div><div class="rlink-desc">${l.desc}</div></span>
+        <span class="rtag">Free</span>
+      </a>`).join('');
+    return `<div class="study-dom">
+      <div class="study-hdr">
+        <span class="dom-badge ${dcb[dm]}" style="margin:0">${dm}</span>
+        <span style="flex:1"></span>
+        <span class="study-score">${dc}/${dqs.length} \u00b7 ${dp}%</span>
+        <span class="${pCls}">${priority}</span>
+      </div>
+      <div class="study-body">
+        <div class="study-lbl">Topics to revise (click \u2192 BBC Bitesize)</div>
+        <div class="topic-tags">${tags}</div>
+        <div class="study-lbl">Resources</div>
+        <div class="res-links">${links}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('rd-review').innerHTML=done.filter(e=>!e.correct).length===0
+    ?'<p style="font-size:13px;color:var(--ink3);padding:.5rem 0">All correct \u2014 nothing to review! \ud83c\udf1f</p>'
+    :done.filter(e=>!e.correct).map(e=>
+      `<div class="missed-item">
+        <div><span class="dom-badge ${dcb[e.q.d]||'db-bio'}" style="font-size:10px;padding:1px 7px;margin-bottom:0">${e.q.d}</span></div>
+        <div class="missed-q">${e.q.q}</div>
+        <div class="missed-wrong">Your answer: ${e.q.o[e.chosen]||'\u2014'}</div>
+        <div class="missed-right">\u2713 ${e.q.o[e.q.a]} \u2014 ${e.q.e}</div>
+      </div>`).join('');
+
+  sendToSheet(done,right,total,pct,elapsed,grade.label);
+}
+
+// ═══════════════════════════════════════════════════════
+// GOOGLE SHEETS
+// ═══════════════════════════════════════════════════════
+function sendToSheet(done,right,total,pct,elapsed,gradeLabel){
+  if(!SHEETS_ENDPOINT) return;
+  const domains=['Biology','Chemistry','Physics','Working Scientifically'];
+  const scores=domains.map(dm=>{
+    const dqs=done.filter(e=>e.q.d===dm);
+    return dqs.length?dqs.filter(e=>e.correct).length+'/'+dqs.length:'\u2014';
+  });
+  let worst='\u2014',worstPct=101;
+  domains.forEach((dm,i)=>{
+    const dqs=done.filter(e=>e.q.d===dm);if(!dqs.length)return;
+    const p=Math.round(dqs.filter(e=>e.correct).length/dqs.length*100);
+    if(p<worstPct){worstPct=p;worst=dm;}
+  });
+  const params=new URLSearchParams({
+    name:S.name,cls:S.cls,year:'Year 6',
+    score:`${right}/${total}`,pct,grade:gradeLabel,
+    bio:scores[0],chem:scores[1],phys:scores[2],ws:scores[3],
+    duration:elapsed,maxStreak:S.maxStreak,theta:S.theta.toFixed(2),weakDomain:worst,
+    aiQuestions:done.filter(e=>e.q.ai&&!e.q._fb).length
+  });
+  new Image().src=SHEETS_ENDPOINT+'?'+params;
+}
+
+function dlCSV(){
+  const done=S.qs,right=done.filter(e=>e.correct).length;
+  let csv='Q#,Domain,Diff,AI?,Question,Correct Answer,Your Answer,Result,Time(s)\n';
+  done.forEach((e,i)=>{
+    const d={1:'Easy',2:'Medium',3:'Hard',4:'Extension'}[e.q.diff]||'Med';
+    csv+=`${i+1},"${e.q.d}",${d},${e.q.ai&&!e.q._fb?'Yes':'No'},"${(e.q.q||'').replace(/"/g,'""')}","${(e.q.o[e.q.a]||'').replace(/"/g,'""')}","${(e.q.o[e.chosen]||'').replace(/"/g,'""')}",${e.correct?'Correct':'Wrong'},${(e.timeMs/1000).toFixed(1)}\n`;
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`Y6_${S.cls}_${S.name.replace(/\s+/g,'-')}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+}
+</script>
+</body>
+</html>
