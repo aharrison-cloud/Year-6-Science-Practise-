@@ -70,6 +70,7 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--paper);color:var(--in
 .dc-medium{background:#fef3c7;color:#92400e}
 .dc-hard{background:#fee2e2;color:#991b1b}
 .dc-ext{background:#fce7f3;color:#be185d}
+.dc-chal{background:#1e1b4b;color:#c7d2fe}
 .btn-stop{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;
   font-family:'Nunito',sans-serif;background:transparent;
   border:1.5px solid #fca5a5;color:#991b1b;cursor:pointer;white-space:nowrap;transition:all .2s}
@@ -228,6 +229,48 @@ a.ttag:hover{border-color:var(--chem-mid);background:var(--chem-bg);color:var(--
 @media(max-width:480px){.dom-grid{grid-template-columns:1fr}}
 .fade-in{animation:fi .22s ease}
 @keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ── CHALLENGE UNLOCK OVERLAY ─────────────────────────────── */
+#unlock-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:radial-gradient(ellipse at 50% 40%, #0f0c29 0%, #000 100%);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .5s ease;pointer-events:none}
+#unlock-overlay.visible{opacity:1;pointer-events:all}
+#unlock-overlay.dismissing{opacity:0}
+.unlock-stars{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.unlock-star{position:absolute;border-radius:50%;background:#fff;
+  animation:ustar var(--d) ease-in-out infinite var(--dl),
+            shoot 3s ease-out forwards var(--dl)}
+@keyframes ustar{0%,100%{opacity:.1}50%{opacity:1}}
+@keyframes shoot{0%{transform:translate(0,0) scale(1)}
+  100%{transform:translate(var(--x),var(--y)) scale(0);opacity:0}}
+.unlock-content{
+  position:relative;z-index:1;text-align:center;
+  padding:2.5rem 2rem;max-width:480px;
+  animation:unlock-rise .6s cubic-bezier(.34,1.56,.64,1) .2s both}
+@keyframes unlock-rise{from{transform:translateY(40px) scale(.9);opacity:0}
+  to{transform:none;opacity:1}}
+.unlock-icon{font-size:72px;margin-bottom:.5rem;
+  animation:pulse-icon 1.5s ease-in-out infinite .8s}
+@keyframes pulse-icon{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.unlock-title{
+  font-family:'Nunito',sans-serif;font-size:32px;font-weight:800;
+  color:#fff;letter-spacing:-1px;margin-bottom:.3rem;
+  text-shadow:0 0 40px rgba(199,210,254,.6)}
+.unlock-name{
+  font-size:16px;color:#a5b4fc;margin-bottom:1.2rem;font-weight:600}
+.unlock-msg{
+  font-size:15px;color:#c7d2fe;line-height:1.65;margin-bottom:.6rem}
+.unlock-sub{
+  font-size:12px;color:#6366f1;margin-bottom:1.8rem;opacity:.8}
+.unlock-btn{
+  padding:13px 36px;border-radius:30px;font-size:15px;font-weight:800;
+  font-family:'Nunito',sans-serif;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;
+  box-shadow:0 0 30px rgba(99,102,241,.5);
+  transition:transform .12s,box-shadow .12s}
+.unlock-btn:hover{transform:scale(1.04);box-shadow:0 0 45px rgba(99,102,241,.7)}
 </style>
 </head>
 <body>
@@ -344,7 +387,7 @@ const SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzJbsGAELB71C0F
 // 3000ms = 3 seconds — keeps well within Gemini 1.5 Flash
 // free tier limits (15 RPM) even with a full class.
 // ═══════════════════════════════════════════════════════
-const MIN_REQUEST_INTERVAL_MS = 3000;
+const MIN_REQUEST_INTERVAL_MS = 5000;
 let lastRequestTime = 0;
 
 async function waitForRateLimit() {
@@ -414,46 +457,109 @@ const gradePill = pct => {
 };
 
 // ═══════════════════════════════════════════════════════
-// FALLBACK BANK — 30 Y6 questions across 5 units.
-// Used when Apps Script is unavailable or returns an error.
+// QUESTION BANK — 100 questions, levels 1–4
+// Units: Living Things & Habitats | Circulatory System
+//        Evolution & Inheritance | Light | Electricity
+//        Working Scientifically
+// Level 1: Below grade  Level 2: At grade
+// Level 3: Top of grade Level 4: KS2/KS3 bridge
+// Level 5: KS3 Challenge — AI generated only
 // ═══════════════════════════════════════════════════════
 const FALLBACK = [
-  // Living Things & Habitats
-  {d:'Biology',diff:1,q:'What does MRS GREN stand for?',o:['Movement, Respiration, Sensitivity, Growth, Reproduction, Excretion, Nutrition','Motion, Reaction, Stimulation, Growth, Reproduction, Energy, Nerves','Movement, Respiration, Sensitivity, Growth, Reproduction, Energy, Nutrition','Motion, Respiration, Sensitivity, Genetics, Reproduction, Excretion, Nutrition'],a:0,e:'MRS GREN lists the 7 life processes shared by all living things. Every letter stands for one process.'},
+  // ── BIOLOGY L1 — Living Things & Habitats ───────────
+  {d:'Biology',diff:1,q:'What does MRS GREN stand for?',o:['Movement, Respiration, Sensitivity, Growth, Reproduction, Excretion, Nutrition','Motion, Reaction, Stimulation, Growth, Reproduction, Energy, Nerves','Movement, Respiration, Sensitivity, Growth, Reproduction, Energy, Nutrition','Motion, Respiration, Sensitivity, Genetics, Reproduction, Excretion, Nutrition'],a:0,e:'MRS GREN lists the 7 life processes: Movement, Respiration, Sensitivity, Growth, Reproduction, Excretion, Nutrition. All living things carry out all seven.'},
   {d:'Biology',diff:1,q:'Carl Linnaeus gave every species two Latin names. What is this system called?',o:['Common naming','Binomial nomenclature','Ecological taxonomy','Latin classification'],a:1,e:'Binomial nomenclature gives every species a unique two-part name (genus + species), e.g. Homo sapiens, used by scientists worldwide.'},
-  {d:'Biology',diff:2,q:'A student finds an organism with a cell wall, that makes its own food using sunlight and cannot move. Which kingdom?',o:['Animal','Fungi','Plant','Protist'],a:2,e:'Plants have cell walls, are autotrophs (make food by photosynthesis), and are generally immobile — key features of the plant kingdom.'},
-  {d:'Biology',diff:2,q:'Which of these is NOT a vertebrate?',o:['Salmon','Frog','Spider','Sparrow'],a:2,e:'Spiders are arachnids — invertebrates with 8 legs and an exoskeleton. Salmon, frogs, and sparrows all have backbones.'},
-  {d:'Biology',diff:3,q:'Viruses reproduce and evolve but are not classified as living. Why?',o:['They are too small','They cannot carry out MRS GREN independently — they need a host cell','They do not have DNA','They are always harmful'],a:1,e:'Viruses cannot respire, grow, or reproduce without hijacking a host cell, so they fail multiple MRS GREN criteria independently.'},
-  {d:'Biology',diff:2,q:'What is the correct order from broadest to most specific in Linnaean classification?',o:['Kingdom → Species → Genus → Family','Kingdom → Phylum → Class → Order → Family → Genus → Species','Species → Genus → Kingdom → Phylum','Phylum → Kingdom → Order → Class'],a:1,e:'Remember: King Philip Came Over For Good Soup. Kingdom is broadest; Species is most specific.'},
-  // Circulatory System
+  {d:'Biology',diff:1,q:'Which group of organisms has 6 legs and 3 body parts?',o:['Arachnids','Insects','Crustaceans','Mammals'],a:1,e:'Insects have 6 legs, 3 body parts (head, thorax, abdomen), and usually wings. Arachnids have 8 legs.'},
   {d:'Biology',diff:1,q:'What is the function of red blood cells?',o:['To fight infection','To carry oxygen around the body','To help blood clot','To carry digested food'],a:1,e:'Red blood cells contain haemoglobin, which binds to oxygen in the lungs and releases it to body tissues.'},
-  {d:'Biology',diff:1,q:'Which blood vessel carries oxygenated blood away from the heart to the body?',o:['Vein','Capillary','Artery','Lymph vessel'],a:2,e:'Arteries carry blood away from the heart. The aorta carries oxygenated blood from the left ventricle to the body.'},
-  {d:'Biology',diff:2,q:'Blood travelling from the heart to the lungs is:',o:['Oxygenated — it carries oxygen to the lungs','Deoxygenated — it carries CO₂ to be exhaled','Carrying digested nutrients only','Carrying antibodies only'],a:1,e:'The right side of the heart pumps deoxygenated blood to the lungs via the pulmonary artery, where CO₂ is exchanged for O₂.'},
-  {d:'Biology',diff:2,q:'A student measures heart rate: 72 bpm at rest, 130 bpm after exercise. Why does heart rate increase?',o:['The heart gets bigger during exercise','Muscles need more oxygen so the heart pumps faster','Blood pressure drops during exercise','The lungs stop working during exercise'],a:1,e:'Active muscles need more oxygen and produce more CO₂. The heart beats faster to deliver O₂ and remove CO₂ more quickly.'},
+  {d:'Biology',diff:1,q:'How many chambers does the human heart have?',o:['2','3','4','6'],a:2,e:'The heart has 4 chambers: right atrium, right ventricle, left atrium, left ventricle. The left side handles oxygenated blood; the right handles deoxygenated blood.'},
+  {d:'Biology',diff:1,q:'Charles Darwin proposed that species change over time through which process?',o:['Selective breeding','Natural selection','Genetic engineering','Mutation only'],a:1,e:'Natural selection: individuals with advantageous traits survive longer and reproduce more, passing those traits to offspring. Over many generations this changes the species.'},
+  {d:'Biology',diff:1,q:'What are fossils?',o:['Living animals preserved in ice','Preserved remains or traces of organisms from long ago, found in rock','Fresh bones found underground','A type of mineral crystal'],a:1,e:'Fossils form when organisms are buried rapidly and minerals gradually replace organic material over millions of years. They provide evidence of ancient life.'},
+  {d:'Biology',diff:1,q:'Which blood vessel carries oxygenated blood away from the heart to the body?',o:['Vein','Capillary','Artery','Lymph vessel'],a:2,e:'Arteries carry blood away from the heart. The aorta is the largest artery, carrying oxygenated blood from the left ventricle to the body.'},
+  {d:'Biology',diff:1,q:'Which of these is NOT a vertebrate?',o:['Salmon','Frog','Spider','Sparrow'],a:2,e:'Spiders are arachnids — invertebrates with 8 legs and an exoskeleton. Salmon (fish), frogs (amphibians), and sparrows (birds) all have backbones.'},
+  {d:'Biology',diff:1,q:'What does the iris do in the eye?',o:['Focuses light onto the retina','Controls the size of the pupil to regulate how much light enters the eye','Detects colour and sends signals to the brain','Protects the front of the eye'],a:1,e:'The iris is the coloured part of the eye. It controls the size of the pupil — in dim light the pupil widens to let in more light; in bright light it narrows.'},
+  // ── BIOLOGY L2 ──────────────────────────────────────
+  {d:'Biology',diff:2,q:'A student finds an organism with a cell wall, makes its own food using sunlight, and cannot move. Which kingdom?',o:['Animal','Fungi','Plant','Protist'],a:2,e:'Plants have cell walls, are autotrophs (make food by photosynthesis), and are generally immobile — key features of the plant kingdom.'},
+  {d:'Biology',diff:2,q:'A classification key asks: "Does it have more than 4 legs?" An insect would answer:',o:['Yes — insects have 6 legs','No — insects have exactly 4 legs','Yes — insects have 8 legs','No — insects have no legs'],a:0,e:'Insects have 6 legs (3 pairs), which is more than 4. This distinguishes them from arachnids (8 legs) and organisms with 4 or fewer legs.'},
+  {d:'Biology',diff:2,q:'What is the correct order from broadest to most specific in Linnaean classification?',o:['Kingdom → Species → Genus → Family','Kingdom → Phylum → Class → Order → Family → Genus → Species','Species → Genus → Kingdom → Phylum','Phylum → Kingdom → Order → Class'],a:1,e:'Remember: King Philip Came Over For Good Soup — Kingdom, Phylum, Class, Order, Family, Genus, Species. Kingdom is broadest; Species is most specific.'},
+  {d:'Biology',diff:2,q:'Which group of microorganisms is used to make bread rise?',o:['Bacteria','Viruses','Fungi (yeast)','Algae'],a:2,e:'Yeast is a single-celled fungus. It respires anaerobically, producing CO2 gas that makes dough rise.'},
+  {d:'Biology',diff:2,q:'Blood travelling from the heart to the lungs is:',o:['Oxygenated — it carries oxygen to the lungs','Deoxygenated — it carries CO2 to be exhaled','Carrying only digested nutrients','Carrying antibodies only'],a:1,e:'The right side of the heart pumps deoxygenated blood (high CO2) to the lungs via the pulmonary artery, where CO2 is exchanged for O2.'},
+  {d:'Biology',diff:2,q:'A student measures heart rate: 72 bpm at rest, 130 bpm after exercise. Why does heart rate increase?',o:['The heart gets bigger during exercise','Muscles need more oxygen so the heart pumps faster to deliver it','Blood pressure drops during exercise','The lungs stop working during exercise'],a:1,e:'Active muscles need more oxygen and produce more CO2. The heart beats faster to circulate blood more quickly, delivering O2 and removing CO2.'},
+  {d:'Biology',diff:2,q:'Which of these is an INHERITED characteristic?',o:['A scar from a childhood injury','Being able to speak Korean','Blood type','A suntan from a summer holiday'],a:2,e:'Blood type is determined by genes inherited from parents. Scars, language, and tans are acquired characteristics — caused by environment or experience.'},
+  {d:'Biology',diff:2,q:'A polar bear has white fur, thick fat layers, and small ears. These are examples of:',o:['Acquired characteristics','Random mutations with no benefit','Adaptations — features that improve survival in the polar environment','Inherited diseases'],a:2,e:'Adaptations are inherited features shaped by natural selection. White fur (camouflage), thick fat (insulation), and small ears (reduced heat loss) all aid Arctic survival.'},
+  {d:'Biology',diff:2,q:'What is the difference between inherited and environmental variation? Choose the correct example pair.',o:['Inherited: eye colour; Environmental: hair dye colour','Inherited: a broken bone; Environmental: height','Inherited: a scar; Environmental: blood group','Inherited: language spoken; Environmental: skin colour'],a:0,e:'Eye colour is determined by genes from parents (inherited). Hair dye colour is caused by a deliberate environmental change. This is the correct inherited/environmental pair.'},
+  {d:'Biology',diff:2,q:'Mary Anning found important fossils at Lyme Regis. Why were her discoveries historically significant?',o:['She invented the microscope','Her fossils provided key early evidence of extinction and ancient life, challenging the idea that species never change','She developed the theory of natural selection','She classified the first microorganisms'],a:1,e:'Anning discovered ichthyosaurs and plesiosaurs in the early 1800s. Her fossils showed species that no longer exist, supporting the ideas of extinction and a changing natural world.'},
+  // ── BIOLOGY L3 ──────────────────────────────────────
+  {d:'Biology',diff:3,q:'Viruses reproduce and evolve but are not classified as living. Why?',o:['They are too small','They cannot carry out MRS GREN independently — they need a host cell','They do not have DNA','They are always harmful'],a:1,e:'Viruses cannot respire, grow, or reproduce without hijacking a host cell, so they fail multiple MRS GREN criteria independently, placing them outside standard classification.'},
+  {d:'Biology',diff:3,q:'Two organisms share the same genus but different species. What can you conclude?',o:['They are identical organisms','They are closely related but cannot produce fertile offspring together','They belong to different kingdoms','They are the same species with different names'],a:1,e:'Same genus means close evolutionary relationship. Different species means they cannot interbreed to produce fertile offspring — the biological species definition.'},
   {d:'Biology',diff:3,q:'Why does the left ventricle have a thicker wall than the right ventricle?',o:['It pumps less blood','It pumps oxygenated blood at high pressure to the entire body — thick walls sustain this pressure','It is closer to the lungs','It has more valves'],a:1,e:'The left ventricle pumps blood through the systemic circuit to every organ. The greater distance requires higher pressure, demanding a thicker, more muscular wall.'},
-  // Evolution & Inheritance
-  {d:'Biology',diff:1,q:'Charles Darwin proposed that species change over time through which process?',o:['Selective breeding','Natural selection','Genetic engineering','Mutation only'],a:1,e:'Natural selection: individuals with advantageous traits survive and reproduce more, passing those traits to offspring over many generations.'},
-  {d:'Biology',diff:1,q:'What are fossils?',o:['Living animals preserved in ice','Preserved remains or traces of organisms that lived long ago, found in rock','Fresh bones found underground','A type of mineral crystal'],a:1,e:'Fossils form when organisms are buried rapidly and minerals gradually replace organic material over millions of years.'},
-  {d:'Biology',diff:2,q:'Which of these is an INHERITED characteristic?',o:['A scar from a childhood injury','Being able to speak Korean','Blood type','A suntan from summer'],a:2,e:'Blood type is determined by genes inherited from parents. Scars, language, and tans are acquired characteristics caused by environment or experience.'},
-  {d:'Biology',diff:3,q:'In a population of beetles, green beetles are eaten more than brown beetles. After many generations, what is most likely?',o:['All beetles become green','Brown beetles increase because they survive and reproduce more','The beetles evolve into birds','Green and brown stay at exactly equal numbers'],a:1,e:'Natural selection: brown beetles have a camouflage advantage. They reproduce more, passing the brown colouration gene on — so brown becomes more common.'},
-  {d:'Biology',diff:2,q:'A polar bear has white fur, thick fat, and small ears. These are examples of:',o:['Acquired characteristics','Random mutations with no benefit','Adaptations — features that improve survival in the polar environment','Inherited diseases'],a:2,e:'Adaptations are inherited features shaped by natural selection. Each feature — camouflage, insulation, reduced heat loss — improves survival in the Arctic.'},
-  // Light
-  {d:'Physics',diff:1,q:'Light travels in:',o:['Curved waves that bend around objects','Straight lines called rays','Spirals from a light source','Any direction, changing constantly'],a:1,e:'Light always travels in straight lines (rectilinear propagation). This explains sharp shadow edges and why you cannot see around corners.'},
-  {d:'Physics',diff:1,q:'What is the law of reflection?',o:['The angle of reflection is always 90°','The angle of incidence equals the angle of reflection','Light always reflects at 45°','Reflection only occurs with mirrors'],a:1,e:'Both angles are measured from the normal to the surface. The angle of incidence always equals the angle of reflection.'},
-  {d:'Physics',diff:2,q:'A ray of light passes from air into glass and bends toward the normal. This is:',o:['Reflection','Dispersion','Refraction','Diffraction'],a:2,e:'Refraction is the bending of light as it crosses a boundary between materials of different optical densities. Light slows in glass, bending toward the normal.'},
-  {d:'Physics',diff:2,q:'What does a prism do to white light?',o:['Turns it into a single colour','Reflects it all back','Disperses it into a spectrum of colours (ROYGBIV)','Makes it travel faster'],a:2,e:'White light contains all visible wavelengths. A prism refracts each wavelength by a different amount, spreading them into a rainbow spectrum.'},
-  {d:'Physics',diff:3,q:'A pencil in a glass of water appears bent at the surface. Why?',o:['The water pushes the pencil sideways','Light refracts as it crosses the air-water boundary, making the pencil appear displaced','The pencil actually bends in water','The glass acts as a magnifying lens'],a:1,e:'Light travels slower in water than air. Your brain assumes straight-line travel, so it perceives the pencil as displaced where the light path bends at the surface.'},
-  // Electricity
-  {d:'Physics',diff:1,q:'What is needed for an electric circuit to work?',o:['A battery, a bulb, and any wire','A complete unbroken loop connecting all components to a power source','At least three batteries in series','An open switch'],a:1,e:'A circuit must be a complete, unbroken loop for current to flow. Any gap — including an open switch — breaks the circuit.'},
-  {d:'Physics',diff:1,q:'What does a switch do in a circuit?',o:['Increases the voltage','Opens or closes the circuit to control current flow','Converts electricity to heat','Stores electrical charge'],a:1,e:'An open switch breaks the circuit — no current flows. A closed switch completes it — current flows. This is how devices are turned on and off.'},
-  {d:'Physics',diff:2,q:'In a series circuit with two bulbs, one bulb is removed. What happens to the other?',o:['It glows more brightly','It continues normally','It goes out — the circuit is broken','It glows more dimly'],a:2,e:'In a series circuit all components share one loop. Removing one bulb breaks the circuit completely, so the remaining bulb also goes out.'},
-  {d:'Physics',diff:2,q:'A student adds a second battery to a series circuit. What happens to the bulb?',o:['It goes out','It glows less brightly','It glows more brightly — voltage increases','Nothing changes'],a:2,e:'Adding a battery in series increases total voltage. Higher voltage drives more current, so the bulb receives more energy and glows brighter.'},
-  {d:'Physics',diff:3,q:'A student adds a third bulb in series to a circuit with two dim bulbs. What happens?',o:['All three bulbs glow brighter','All three glow even more dimly — more resistance reduces current','The first two get brighter and the third is dim','All bulbs go out immediately'],a:1,e:'Adding bulbs in series increases resistance. With fixed voltage and higher resistance, current decreases — all bulbs receive less energy and glow more dimly.'},
-  // Working Scientifically
-  {d:'Working Scientifically',diff:1,q:'What is a hypothesis?',o:['A conclusion drawn after an experiment','A testable prediction made before an experiment, based on scientific knowledge','A list of equipment needed','A type of graph'],a:1,e:'A hypothesis is a testable, specific prediction written before the investigation, often in the form "I predict that... because...".'},
-  {d:'Working Scientifically',diff:2,q:'A student tests how light intensity affects plant growth, keeping all other variables the same. What type of variable is light intensity?',o:['Dependent variable','Control variable','Independent variable','Anomalous variable'],a:2,e:'The independent variable is what you deliberately change. Light intensity is deliberately varied while everything else is kept constant for a fair test.'},
-  {d:'Working Scientifically',diff:2,q:'Data: 2.1, 2.3, 2.0, 5.8, 2.2 cm. What should the student do with 5.8 cm?',o:['Include it — it must be the most important result','Record it as anomalous, exclude from the mean, consider repeating that trial','Delete it from the data entirely','Use only the 5.8 cm result as it is the largest'],a:1,e:'5.8 cm is anomalous — far outside the 2.0–2.3 cm cluster. Record it (do not hide data), exclude from the mean, and consider repeating.'},
-  {d:'Working Scientifically',diff:3,q:'A student concludes: "More light always causes faster plant growth." What is the main problem?',o:['Plant growth is not affected by light','It overgeneralises — should say "in this investigation" and note that too much light may be harmful','The conclusion needs to be longer','She should not have measured growth'],a:1,e:'"Always" goes beyond the evidence of one experiment. Good conclusions reference specific data, acknowledge limitations, and avoid absolute language.'},
+  {d:'Biology',diff:3,q:'In a population of green and brown beetles, birds eat green ones more. After many generations, what happens?',o:['All beetles become green','Brown beetles increase because they survive and reproduce more, passing the brown gene on','The beetles evolve into birds','Green and brown stay exactly equal'],a:1,e:'Natural selection: brown beetles have a camouflage advantage. They survive longer, reproduce more, and pass the brown colouration gene to more offspring — so brown becomes more common over generations.'},
+  {d:'Biology',diff:3,q:'Why does natural selection require variation within a population?',o:['Without variation, reproduction cannot occur','If all individuals are identical, there are no differences to be selected for — evolution requires heritable differences in fitness','Variation makes animals more colourful','Without variation, fossils cannot form'],a:1,e:'Natural selection acts on heritable variation. If all individuals were identical, none would have a survival advantage over others, and the population could not evolve in response to selection pressure.'},
+  {d:'Biology',diff:3,q:'A student investigates how exercise affects heart rate. She measures heart rate before, immediately after, and 2 minutes after exercise. Why should she measure 2 minutes after as well?',o:['It makes the table look more complete','To investigate recovery rate — how quickly the heart returns to resting rate, which indicates cardiovascular fitness','To use more equipment','The results after exercise are always inaccurate'],a:1,e:'Recovery rate is a useful measure of cardiovascular fitness. Fitter individuals recover more quickly. Measuring after 2 minutes provides data on how the heart responds to the demands of exercise over time.'},
+  {d:'Biology',diff:3,q:'Cambridge style — A student compares two classification systems: Aristotle\'s system (grouping by habitat) and Linnaeus\'s system (grouping by shared physical characteristics). Which is more scientifically useful and why?',o:['Aristotle\'s — habitat is easy to observe','Linnaeus\'s — grouping by shared characteristics reflects evolutionary relationships more accurately and allows consistent naming across all languages','Both are equally useful','Neither is useful in modern science'],a:1,e:'Habitat-based grouping (e.g. putting bats with birds because both fly) ignores evolutionary relationships. Shared physical characteristics, combined with modern DNA analysis, better reflects how organisms are actually related — the basis of phylogenetics.'},
+  {d:'Biology',diff:3,q:'What is the difference between continuous and discontinuous variation? Give an example of each.',o:['They are the same thing','Continuous variation shows a range of values with no distinct categories (e.g. height); discontinuous shows distinct categories with no intermediate values (e.g. blood type)','Continuous variation is always inherited; discontinuous is always environmental','Discontinuous variation only occurs in plants'],a:1,e:'Height is continuous — people are not simply "tall" or "short" but distributed across a range. Blood type is discontinuous — you are type A, B, AB, or O with no intermediate values. This distinction reflects different genetic inheritance patterns.'},
+  {d:'Biology',diff:3,q:'Cambridge style — A student shines light at a mirror at 40° to the normal. She then tilts the mirror by 10°. What is the new angle of reflection?',o:['40°','50°','30°','80°'],a:1,e:'Tilting the mirror by 10° changes the normal by 10°. The new angle of incidence is 40° + 10° = 50°. By the law of reflection, the angle of reflection also equals 50°.'},
+  {d:'Biology',diff:3,q:'A student builds two circuits: one with bulbs in series, one with bulbs in parallel. In the parallel circuit, removing one bulb does not affect the others. Why?',o:['Parallel circuits have more batteries','Each branch in a parallel circuit has its own complete path to the battery — removing one branch does not break the other branches','Parallel circuits have no resistance','The bulbs in parallel are brighter because they share current'],a:1,e:'In parallel circuits, each component has its own path. Current can still flow through the remaining branches even if one is removed. This is why household circuits are wired in parallel — one failing device does not affect others.'},
+  // ── BIOLOGY L4 ──────────────────────────────────────
+  {d:'Biology',diff:4,q:'Antibiotic resistance in bacteria is an example of natural selection. A student says "the bacteria decided to become resistant." Why is this incorrect?',o:['Bacteria can decide things','Random genetic variation already exists in the population. Antibiotics kill non-resistant bacteria, leaving resistant ones to reproduce — increasing the resistance gene frequency over generations.','All bacteria become resistant simultaneously','Antibiotics cause the resistance mutation directly'],a:1,e:'Evolution by natural selection does not involve "decisions" or directed change. Pre-existing random variation is selected by environmental pressure. Bacteria that happen to carry resistance genes survive; others die. Gene frequency changes over generations.'},
+  {d:'Biology',diff:4,q:'The double circulatory system passes blood through the heart twice per circuit. What is the key advantage?',o:['It uses less energy','It allows oxygenated and deoxygenated blood to mix efficiently','Blood is re-pressurised after losing pressure in lung capillaries, ensuring strong flow to all body tissues','The heart beats twice as fast'],a:2,e:'After passing through the lung capillaries, blood pressure drops significantly. Returning to the left side of the heart allows the left ventricle to re-pressurise the blood before sending it to the entire body — sustaining efficient oxygen delivery.'},
+  {d:'Biology',diff:4,q:'Photosynthesis produces glucose. Write the word equation and explain where the atoms come from.',o:['Glucose + oxygen → carbon dioxide + water','Carbon dioxide + water → glucose + oxygen; carbon and oxygen come from CO2 in the air; hydrogen comes from water absorbed through roots; light energy drives the reaction','Oxygen + water → glucose + carbon dioxide','Glucose → carbon dioxide + water + energy'],a:1,e:'Carbon dioxide (from air through stomata) and water (from soil through roots) are the raw materials. Light energy, captured by chlorophyll, drives the reaction. Oxygen is a by-product released through stomata.'},
+  {d:'Biology',diff:4,q:'A cave fish population has lost functional eyes over thousands of generations while related river fish retain them. What does this demonstrate about natural selection?',o:['Natural selection always improves organisms','Natural selection only acts on traits that affect survival and reproduction. In darkness, eyes provide no advantage — maintaining them wastes energy. Fish with reduced eyes waste less energy and survive just as well.','Cave fish chose to lose their eyes','Eyes disappear in all animals living underground'],a:1,e:'Natural selection is not directional — it selects against costly traits with no benefit. In darkness, developing and maintaining eyes costs energy but provides no survival advantage. Individuals with reduced eyes reproduce just as well, leading to eye loss over generations.'},
+  // ── PHYSICS L1 — Light ──────────────────────────────
+  {d:'Physics',diff:1,q:'Light travels in:',o:['Curved waves that bend around objects','Straight lines called rays','Spirals from a light source','Any direction, changing constantly'],a:1,e:'Light always travels in straight lines (rectilinear propagation). This is why shadows have sharp edges and you cannot see around corners.'},
+  {d:'Physics',diff:1,q:'Which part of the eye focuses light onto the retina?',o:['Iris','Pupil','Lens','Cornea'],a:2,e:'The lens focuses light by changing its shape (accommodation). The cornea also refracts light, but the lens fine-tunes focus. The retina detects light and sends signals to the brain.'},
+  {d:'Physics',diff:1,q:'Which of these is a luminous object — it produces its own light?',o:['The Moon','A mirror','The Sun','A white wall'],a:2,e:'The Sun is luminous — it generates light through nuclear fusion. The Moon, mirrors, and walls are non-luminous; they only reflect light from other sources.'},
+  {d:'Physics',diff:1,q:'What causes a shadow to form?',o:['Light bends around objects','An opaque object blocks light, preventing it from reaching the surface behind it','Transparent objects absorb light','Shadows are made of dark light'],a:1,e:'Shadows form when an opaque object blocks light from a source. Light travels in straight lines, so the region behind the object receives no light.'},
+  {d:'Physics',diff:1,q:'What unit is voltage measured in?',o:['Amperes (A)','Ohms (Ω)','Watts (W)','Volts (V)'],a:3,e:'Voltage (potential difference) is measured in Volts (V), named after Alessandro Volta. Current is measured in Amperes; resistance in Ohms.'},
+  {d:'Physics',diff:1,q:'Which material is a conductor of electricity?',o:['Plastic','Wood','Rubber','Copper'],a:3,e:'Copper is a metal and an excellent conductor — its electrons move freely, allowing current to flow. Plastic, wood, and rubber are insulators.'},
+  {d:'Physics',diff:1,q:'What is needed for an electric circuit to work?',o:['A battery, a bulb, and any wire','A complete unbroken loop connecting all components to a power source','At least three batteries in series','An open switch to let current flow'],a:1,e:'A circuit must be a complete, unbroken loop for current to flow. Any gap — including an open switch — stops current.'},
+  {d:'Physics',diff:1,q:'What does a switch do in a circuit?',o:['Increases the voltage','Opens or closes the circuit to control current flow','Converts electricity to heat','Stores electrical charge'],a:1,e:'An open switch breaks the circuit — no current flows. A closed switch completes it — current flows. This is how electrical devices are turned on and off.'},
+  // ── PHYSICS L2 ──────────────────────────────────────
+  {d:'Physics',diff:2,q:'What is the law of reflection?',o:['The angle of reflection is always 90°','The angle of incidence equals the angle of reflection, both measured from the normal','Light always reflects at 45°','Reflection only occurs with mirrors'],a:1,e:'Both angles are measured from the normal (perpendicular to the surface). The angle of incidence always equals the angle of reflection — this applies to all smooth surfaces.'},
+  {d:'Physics',diff:2,q:'A ray of light passes from air into glass and bends toward the normal. This is called:',o:['Reflection','Dispersion','Refraction','Diffraction'],a:2,e:'Refraction is the bending of light as it crosses a boundary between materials of different optical densities. Light slows in glass, bending toward the normal on entry.'},
+  {d:'Physics',diff:2,q:'What does a prism do to white light?',o:['Turns it into a single colour','Reflects it all back','Disperses it into a spectrum of colours (ROYGBIV)','Makes it travel faster'],a:2,e:'White light contains all visible wavelengths. A prism refracts each wavelength by a different amount (dispersion), spreading them into the visible spectrum.'},
+  {d:'Physics',diff:2,q:'A student holds a torch close to a wall. If they move the torch further away, what happens to the shadow?',o:['The shadow gets larger','The shadow gets smaller and sharper','The shadow disappears','The shadow changes colour'],a:1,e:'Moving the light source further away makes rays more parallel, reducing the penumbra (fuzzy edge) and shrinking the umbra. The shadow becomes smaller and sharper.'},
+  {d:'Physics',diff:2,q:'In a series circuit with two bulbs, one bulb is removed. What happens to the other?',o:['It glows more brightly','It continues normally','It goes out too — the circuit is broken','It glows more dimly'],a:2,e:'In a series circuit all components share one loop. Removing one bulb breaks the circuit completely, so no current flows and the remaining bulb also goes out.'},
+  {d:'Physics',diff:2,q:'A student adds a second battery to a series circuit. What happens to the bulb?',o:['It goes out','It glows less brightly','It glows more brightly — voltage increases','Nothing changes'],a:2,e:'Adding a battery in series increases total voltage. Higher voltage drives more current through the circuit, so the bulb receives more energy and glows more brightly.'},
+  {d:'Physics',diff:2,q:'What does a voltmeter measure in a circuit?',o:['The current flowing through a component','The resistance of a wire','The voltage (potential difference) across a component','The power used'],a:2,e:'A voltmeter measures the potential difference (voltage) between two points. It is always connected in parallel across a component, never in series.'},
+  {d:'Physics',diff:2,q:'Why do electricians use rubber gloves when working with live wires?',o:['Rubber conducts electricity safely','Rubber is an insulator — it prevents current flowing through the electrician\'s body','Rubber makes the work easier','They are required for appearance only'],a:1,e:'Rubber is an electrical insulator — electrons cannot flow through it. Rubber gloves prevent current from taking a path through the electrician\'s body, protecting against electric shock.'},
+  {d:'Physics',diff:2,q:'Cambridge style — A student shines a torch at a mirror at 35° to the normal. What is the angle of reflection?',o:['70°','35°','90°','55°'],a:1,e:'The law of reflection: angle of incidence = angle of reflection. Both measured from the normal. So the angle of reflection is also 35°.'},
+  {d:'Physics',diff:2,q:'What is the difference between the umbra and penumbra of a shadow?',o:['They are the same thing','The umbra is total shadow; the penumbra is partial shadow where the light source is only partially blocked','The penumbra is darker than the umbra','The umbra only forms with transparent objects'],a:1,e:'The umbra is where no light reaches — complete shadow. The penumbra surrounds it — here part of the light source is blocked, creating a partially lit region. Large light sources create bigger penumbras.'},
+  // ── PHYSICS L3 ──────────────────────────────────────
+  {d:'Physics',diff:3,q:'A student adds a third bulb in series to a circuit with two dim bulbs. What happens?',o:['All three glow brighter','All three glow even more dimly — more resistance reduces current throughout the circuit','The first two get brighter and the third is dim','All bulbs go out immediately'],a:1,e:'Adding bulbs in series increases total resistance. With fixed voltage and more resistance, current decreases — all bulbs receive less energy and glow more dimly.'},
+  {d:'Physics',diff:3,q:'A pencil in a glass of water appears bent at the surface. Why?',o:['The water pushes the pencil sideways','Light refracts as it crosses the air-water boundary — your brain assumes straight-line travel so the pencil appears displaced','The pencil actually bends in water','The glass acts as a magnifying lens'],a:1,e:'Light travels slower in water than air. As it crosses the boundary it refracts. Your brain traces light back in a straight line, so it perceives the pencil as displaced at the water surface.'},
+  {d:'Physics',diff:3,q:'Cambridge style — A student investigates refraction. At 0° (straight on) the ray does not bend. At 30°, it bends slightly. At 60°, it bends more. What pattern is shown?',o:['Refraction is random and unpredictable','The greater the angle of incidence, the greater the angle of refraction — the ray bends more as the angle increases','The ray bends the same at all angles','At 60° the ray reflects back'],a:1,e:'As the angle of incidence increases, the angle of refraction also increases. This is consistent with Snell\'s Law. At 0° (normal incidence) there is no bending because the direction does not change relative to the boundary.'},
+  {d:'Physics',diff:3,q:'Cambridge style — A student measures current as she adds bulbs in series: 1 bulb = 0.5A, 2 bulbs = 0.25A, 3 bulbs = 0.17A. What pattern is shown?',o:['Current increases as more bulbs are added','Current decreases as more bulbs are added — each bulb adds resistance, reducing current flow','Current stays constant regardless of bulbs','The results are anomalous'],a:1,e:'Adding bulbs in series increases resistance. By Ohm\'s Law (V=IR), with constant voltage and increasing resistance, current decreases. The pattern shows approximately halving with each doubling of bulbs.'},
+  {d:'Physics',diff:3,q:'A student investigates whether the number of cells affects bulb brightness. She uses 1, 2, 3, and 4 cells. Results show progressively increasing brightness. What is the independent variable and what does she conclude?',o:['Independent variable: bulb brightness; more cells make the circuit work','Independent variable: number of cells; increasing cells increases voltage, which increases current, making the bulb glow more brightly','Independent variable: wire type; wires affect brightness','Independent variable: bulb type; all bulbs are the same'],a:1,e:'The independent variable is what she deliberately changes — number of cells. Each cell adds voltage; more voltage drives more current through the bulb; more current means more energy per second and greater brightness.'},
+  {d:'Physics',diff:3,q:'Cambridge style — A student measures shadow size as she moves a light source closer to an object. Results: 50cm away → 3cm shadow; 30cm → 5cm; 15cm → 9cm; 5cm → 18cm. What pattern is shown?',o:['Shadow size decreases as the light source gets closer','Shadow size increases as the light source gets closer — rays diverge more, spreading the shadow over a larger area','Shadow size stays constant','The results are anomalous'],a:1,e:'As the light source moves closer, rays diverge more widely from the source, spreading the shadow over a larger area. The closer the source, the larger and fuzzier the shadow.'},
+  // ── PHYSICS L4 ──────────────────────────────────────
+  {d:'Physics',diff:4,q:'A student connects two bulbs in series and two bulbs in parallel with the same battery. In which arrangement are bulbs brighter, and why?',o:['Series — more bulbs means more brightness','Parallel — each bulb receives the full battery voltage; in series the voltage is shared between bulbs so each gets less','Series — they share current efficiently','Both produce identical brightness'],a:1,e:'In a parallel circuit, each branch receives the full supply voltage. In series, voltage is divided between components. More voltage across each bulb means more current and more power, producing greater brightness. This is why household appliances are wired in parallel.'},
+  {d:'Physics',diff:4,q:'A student measures total resistance of resistors connected in series: 2Ω, 4Ω, and 6Ω. What is the total resistance?',o:['4Ω (the average)','12Ω — resistances in series add together','6Ω — only the largest counts','2Ω — resistances cancel out'],a:1,e:'In a series circuit, total resistance = R1 + R2 + R3 = 2 + 4 + 6 = 12Ω. Current passes through each resistor in sequence, encountering each resistance in turn.'},
+  {d:'Physics',diff:4,q:'When light travels from glass into air it can undergo total internal reflection if the angle exceeds the critical angle. What is this used for in real life?',o:['Only a laboratory phenomenon with no uses','Fibre optic cables use total internal reflection to carry light signals around bends with virtually no loss — used in internet cables and medical endoscopes','Only used in prisms','Only occurs in water'],a:1,e:'Fibre optic cables are made of glass or plastic. Light signals bounce along by total internal reflection, losing almost no energy. This enables high-speed data transmission over long distances.'},
+  {d:'Physics',diff:4,q:'The human eye has a blind spot where no light-sensitive cells exist. Why do we not normally notice a gap in our vision?',o:['The blind spot is too small to notice','The brain fills in the missing information using surrounding context and input from the other eye, constructing a seamless visual image','The blind spot moves around','Both eyes have blind spots in the same position'],a:1,e:'The brain actively constructs our visual experience. It uses information from surrounding areas and the overlapping visual field of the other eye to fill in the blind spot — an example of the brain\'s interpretation of sensory data.'},
+  // ── WORKING SCIENTIFICALLY L1 ───────────────────────
+  {d:'Working Scientifically',diff:1,q:'What is a hypothesis?',o:['A conclusion drawn after an experiment','A testable prediction made before an experiment, based on scientific knowledge','A list of equipment needed','A type of graph'],a:1,e:'A hypothesis is a testable, specific prediction written before the investigation — often in the form "I predict that... because...". It should be based on scientific understanding.'},
+  {d:'Working Scientifically',diff:1,q:'What is the independent variable in an experiment?',o:['What you measure','What you keep the same','What you deliberately change','An unexpected result'],a:2,e:'The independent variable is what you deliberately change. The dependent variable is what you measure in response. Control variables are kept constant for a fair test.'},
+  {d:'Working Scientifically',diff:1,q:'Why should an experiment be repeated several times?',o:['To use more equipment','To make results more reliable and spot anomalies','Because one result is always wrong','To make the write-up longer'],a:1,e:'Repeating experiments and calculating a mean reduces the effect of random errors and increases reliability and confidence in the conclusion.'},
+  {d:'Working Scientifically',diff:1,q:'What should you do with an anomalous result?',o:['Ignore it completely','Delete it from your data table','Record it, note it as anomalous, and exclude it from the mean','Use it as your main conclusion'],a:2,e:'Anomalous results must be recorded honestly, identified in the evaluation, and excluded from mean calculations. They may indicate experimental error or an interesting phenomenon.'},
+  {d:'Working Scientifically',diff:1,q:'Which type of graph is best for showing results from separate categories?',o:['Line graph','Scatter graph','Bar chart','Pie chart only'],a:2,e:'Bar charts are used for discrete/categorical data — separate groups with no continuous relationship, such as types of material or animal groups.'},
+  // ── WORKING SCIENTIFICALLY L2 ───────────────────────
+  {d:'Working Scientifically',diff:2,q:'A student tests how light intensity affects plant growth, keeping all other variables the same. What type of variable is light intensity?',o:['Dependent variable','Control variable','Independent variable','Anomalous variable'],a:2,e:'The independent variable is what the student deliberately changes — here, light intensity. The dependent variable (height or growth) is measured in response.'},
+  {d:'Working Scientifically',diff:2,q:'Data set: 2.1, 2.3, 2.0, 5.8, 2.2 cm. What should the student do with 5.8 cm?',o:['Include it — it is the most important result','Record it as anomalous, exclude from the mean, consider repeating that trial','Delete it from the data entirely','Use only 5.8 cm as the final answer'],a:1,e:'5.8 cm is anomalous — far outside the 2.0–2.3 cm cluster. Record it honestly, note it as anomalous, exclude from the mean, and consider repeating that measurement.'},
+  {d:'Working Scientifically',diff:2,q:'A student concludes: "More light always causes faster plant growth." What is the main problem?',o:['Plant growth is not affected by light','It overgeneralises — should say "in this investigation" and note that too much light may be harmful','The conclusion needs to be longer','She should not mention growth'],a:1,e:'"Always" goes beyond the evidence of one experiment. Good conclusions say "in this investigation, within the range tested" and acknowledge limitations.'},
+  {d:'Working Scientifically',diff:2,q:'Cambridge style — A student measures current as she adds bulbs in series: 1 bulb = 0.5A, 2 = 0.25A, 3 = 0.17A. What pattern is shown?',o:['Current increases as more bulbs are added','Current decreases as more bulbs are added — each bulb adds resistance, reducing current','Current stays constant','The results are anomalous'],a:1,e:'Adding bulbs in series increases resistance. With constant voltage and increasing resistance, current decreases. The data shows approximately halving with each doubling of bulbs.'},
+  {d:'Working Scientifically',diff:2,q:'Why is a large sample size important?',o:['It makes the experiment look more impressive','A larger sample reduces the effect of chance variation, making results more representative and reliable','It uses more equipment','Large samples are required by law'],a:1,e:'With small samples, one unusual result can significantly distort the mean. Larger samples reduce the influence of random variation, making results more representative of the true relationship.'},
+  {d:'Working Scientifically',diff:2,q:'A student measures the height of 5 plants: 12, 14, 11, 13, 12 cm. What is the mean height?',o:['11 cm','12.4 cm','13 cm','14 cm'],a:1,e:'Mean = sum divided by count. (12+14+11+13+12) divided by 5 = 62 divided by 5 = 12.4 cm. Always check that the mean falls within the range of your data.'},
+  // ── WORKING SCIENTIFICALLY L3 ───────────────────────
+  {d:'Working Scientifically',diff:3,q:'Cambridge style — A student tests 5 surfaces for friction. Results (force in N): carpet 8.4, wood 5.1, glass 1.2, rubber 9.8, ice 0.3. Rank from least to most friction and state one limitation.',o:['Ice, glass, wood, carpet, rubber (least to most). Limitation: only testing one block on each surface reduces reliability.','Rubber, carpet, wood, glass, ice','Glass, ice, wood, carpet, rubber','Wood, carpet, rubber, glass, ice'],a:0,e:'More force = more friction. Ranking: ice (0.3) < glass (1.2) < wood (5.1) < carpet (8.4) < rubber (9.8). Key limitation: single trials are unreliable — repeating and calculating means would improve confidence.'},
+  {d:'Working Scientifically',diff:3,q:'A student investigates bridge strength with 1, 2, 3, and 4 paper layers, building only one bridge per thickness. What is the main weakness?',o:['She used too many layers','One trial per condition is unreliable — a single result may be anomalous. She should repeat each at least 3 times and calculate a mean.','The paper should be plastic','Bridges should not be tested with mass'],a:1,e:'Single results are unreliable — any one result could be anomalous due to random variation in construction. Multiple repeats allow anomalies to be identified and reliable means calculated.'},
+  {d:'Working Scientifically',diff:3,q:'Two students measure the same current five times. Student A: 0.42, 0.44, 0.41, 0.43, 0.42A. Student B: 0.35, 0.51, 0.48, 0.38, 0.42A. Whose results are more reliable and why?',o:['Student B — higher values are more accurate','Student A — results are more consistent (range 0.03A vs 0.16A), suggesting better technique and lower random error','Both are equally reliable','Neither is reliable'],a:1,e:'Reliability is about consistency. Student A\'s range is 0.03A; Student B\'s is 0.16A. Student A\'s tighter clustering indicates better technique and lower random error.'},
+  {d:'Working Scientifically',diff:3,q:'Cambridge style — A student grows bacteria on agar plates with and without an antibiotic disc. A clear zone appears around the disc after 48 hours. What does the clear zone indicate, and how would she quantify effectiveness?',o:['The disc absorbed the bacteria','The clear zone (zone of inhibition) shows bacteria cannot grow there — the antibiotic is effective. She would measure the diameter of the clear zone to quantify effectiveness.','The bacteria have grown over the disc','The clear zone means the disc is too small'],a:1,e:'The zone of inhibition shows where bacterial growth is prevented. A larger zone indicates greater effectiveness. Measuring its diameter in mm provides a quantitative comparison between antibiotics.'},
+  {d:'Working Scientifically',diff:3,q:'A student writes: "My results support my prediction because the plant grew taller with more light." What is missing from this conclusion?',o:['Nothing — it is complete','Specific data values, reference to the range tested, acknowledgement of limitations, and a statement about reliability','It should be longer','The student should not mention their prediction'],a:1,e:'A strong conclusion references specific data ("height increased from 8 to 19 cm as light increased from 0 to full sunlight"), addresses whether the hypothesis was supported, identifies limitations, and comments on reliability.'},
+  // ── WORKING SCIENTIFICALLY L4 ───────────────────────
+  {d:'Working Scientifically',diff:4,q:'A student claims: "My results prove vitamin C prevents colds." She tested 20 people — 10 took supplements, 10 did not. Supplement group: 1.2 colds on average; control: 2.1. Identify two reasons her conclusion is too strong.',o:['There are no problems','(1) Sample size too small (n=10 per group) — not representative. (2) "Proves" overstates — science provides evidence, not proof. Confounding variables (diet, exercise, sleep) were not controlled.','She should have used more vitamin C','The experiment took too long'],a:1,e:'Two key issues: small sample reduces reliability and generalisability; "proves" overstates what one study can show. Without random allocation and controlling confounders, the groups may have differed in other ways that explain the result.'},
+  {d:'Working Scientifically',diff:4,q:'A student evaluates her investigation into salt concentration and rusting. She says her results are "valid." What does validity mean in science?',o:['Valid means the results are correct','Valid means the investigation measured what it intended — results are valid if she only changed salt concentration and kept all other variables constant','Valid means the experiment was safe','Valid means all results are the same'],a:1,e:'Validity is about measuring what you intend to measure. An investigation is valid if results reflect only the effect of the independent variable. Any uncontrolled variable could invalidate results by offering an alternative explanation.'},
+  {d:'Working Scientifically',diff:4,q:'Cambridge style — A student plots a scatter graph of shoe size vs height for 30 Year 6 students. There is a positive correlation but scattered points. She concludes "bigger feet cause you to be taller." What is wrong?',o:['The conclusion is correct — correlation proves causation','Correlation does not equal causation. Both variables may be influenced by a third factor (overall growth/age). Causation requires controlled experimental evidence, not observational data.','She used too many students','The graph should be a bar chart'],a:1,e:'Correlation shows that two variables change together, but does not demonstrate that one causes the other. Both height and shoe size are influenced by overall growth. Establishing causation requires controlled experiments, not observational studies alone.'},
+  {d:'Working Scientifically',diff:4,q:'A student uses only 5 repeat measurements and claims high reliability. A second student uses 20 repeats. Why does the second student have stronger evidence?',o:['20 repeats are always required','With more repeats, the calculated mean is less affected by individual anomalies, the standard deviation is more stable, and the results are more likely to represent the true value. Statistical confidence increases with sample size.','The first student did not repeat enough times by law','Reliability only depends on equipment, not repeats'],a:1,e:'Statistical principle: as sample size increases, the mean converges toward the true population value and random error has less influence. With n=5, a single anomalous result shifts the mean significantly. With n=20, the same anomaly has minimal effect.'},
 ];
 
 let FALLBACK_USED = new Set();
@@ -474,58 +580,127 @@ function getFallback(domain, diff) {
 // ═══════════════════════════════════════════════════════
 let S = {};
 
+// Count correct diff-4 (extension) answers in current session
+function correctExtensionCount() {
+  return S.qs ? S.qs.filter(e => e.q.diff === 4 && e.correct).length : 0;
+}
+
 function targetDiff(theta) {
-  if (theta < -0.8) return 1;
-  if (theta > 1.5)  return 4;
-  if (theta > 0.6)  return 3;
-  return 2;
+  // Diff 5 Challenge (KS3 Y7/8) unlocks after 10 correct diff-4 answers
+  if (correctExtensionCount() >= 10 && theta > 1.2) return 5;
+  if (theta < -0.8) return 1;  // Below grade level
+  if (theta > 1.5)  return 4;  // KS2/KS3 bridge (extension)
+  if (theta > 0.6)  return 3;  // Top of grade
+  return 2;                    // At grade level
 }
 function updateTheta(theta, correct, diff) {
   const step = 0.45;
-  const dv = {1:-1,2:0,3:.5,4:1}[diff]||0;
+  const dv = {1:-1,2:0,3:.5,4:1,5:1.5}[diff]||0;
   return correct
     ? Math.min(3,  theta + step*(1+dv*.3))
     : Math.max(-3, theta - step*(1-dv*.2));
 }
 
 // ═══════════════════════════════════════════════════════
-// QUESTION FETCHER
-// Calls Apps Script action=question — no API key in browser.
-// Apps Script calls Gemini server-side using Script Properties.
-// Falls back to local bank on any error.
+// QUESTION FETCHER — THREE TIER SYSTEM
+// Tier 1: Google Sheets bank  (levels 1–4, action=getQuestion)
+// Tier 2: Hardcoded fallback  (if Sheets unavailable)
+// Tier 3: Gemini AI           (diff 5 Challenge only)
 // ═══════════════════════════════════════════════════════
-async function fetchQuestion(domain, diff, theta, style) {
-  if (!SHEETS_ENDPOINT || SHEETS_ENDPOINT === 'YOUR_APPS_SCRIPT_ENDPOINT_HERE') {
-    return null;
-  }
+
+async function fetchFromBank(domain, diff) {
+  if (!SHEETS_ENDPOINT || SHEETS_ENDPOINT === 'YOUR_APPS_SCRIPT_ENDPOINT_HERE') return null;
   try {
-    await waitForRateLimit();
     const params = new URLSearchParams({
-      action: 'question',
-      domain, diff, theta: theta.toFixed(2), style, year: '6'
+      action: 'getQuestion',
+      domain, diff, year: '6',
+      excludeIds: (S.usedBankIDs || []).join(',')
     });
     const r = await fetch(SHEETS_ENDPOINT + '?' + params.toString(), {
-      signal: AbortSignal.timeout(12000)
+      signal: AbortSignal.timeout(8000)
     });
-    if (!r.ok) { console.warn('Apps Script error', r.status); return null; }
+    if (!r.ok) { console.warn('Bank fetch error', r.status); return null; }
     const data = await r.json();
-    if (data.error) { console.warn('Question error:', data.error); return null; }
-    if (!data.q || !data.o || data.o.length !== 4 || data.a === undefined) return null;
+    if (data.error || !data.q || !data.o || data.o.length !== 4 || data.a === undefined) return null;
+    if (data.id) {
+      S.usedBankIDs = S.usedBankIDs || [];
+      S.usedBankIDs.push(data.id);
+    }
     return {
-      d: data.d || domain,
-      diff: data.diff || diff,
-      q: data.q,
-      context: data.context || null,
-      o: data.o,
-      a: parseInt(data.a),
-      e: data.e || '',
-      ai: true,
-      ext: data.ext || false
+      d: data.d || domain, diff: data.diff || diff,
+      q: data.q, context: data.context || null,
+      o: data.o, a: parseInt(data.a),
+      e: data.e || '', fromBank: true, ext: false
     };
   } catch(err) {
-    console.warn('fetchQuestion failed:', err.message || err);
+    console.warn('fetchFromBank failed:', err.message || err);
     return null;
   }
+}
+
+async function fetchAIChallenge(domain, theta, style) {
+  if (!SHEETS_ENDPOINT || SHEETS_ENDPOINT === 'YOUR_APPS_SCRIPT_ENDPOINT_HERE') return null;
+  const params = new URLSearchParams({
+    action: 'question',
+    domain, diff: 5, theta: theta.toFixed(2), style, year: '6'
+  });
+  const url = SHEETS_ENDPOINT + '?' + params.toString();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await waitForRateLimit();
+      const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (r.status === 429) {
+        console.warn('429 quota hit — waiting 8s');
+        await new Promise(res => setTimeout(res, 8000));
+        continue;
+      }
+      if (!r.ok) { console.warn('AI fetch error', r.status); return null; }
+      const data = await r.json();
+      if (data.error || !data.q || !data.o || data.o.length !== 4 || data.a === undefined) return null;
+      return {
+        d: data.d || domain, diff: 5,
+        q: data.q, context: data.context || null,
+        o: data.o, a: parseInt(data.a),
+        e: data.e || '', ai: true, ext: false, challenge: true
+      };
+    } catch(err) {
+      console.warn('fetchAIChallenge failed:', err.message || err);
+      return null;
+    }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
+// CHALLENGE UNLOCK OVERLAY
+// ═══════════════════════════════════════════════════════
+function showUnlockOverlay(name, onComplete) {
+  const overlay = document.createElement('div');
+  overlay.id = 'unlock-overlay';
+  overlay.innerHTML = `
+    <div class="unlock-stars" id="unlock-stars"></div>
+    <div class="unlock-content">
+      <div class="unlock-icon">🧠</div>
+      <div class="unlock-title">Challenge Unlocked</div>
+      <div class="unlock-name">${name}</div>
+      <div class="unlock-msg">You\'ve answered 10 extension questions correctly.<br>You\'ve earned access to Year 7/8 level questions.</div>
+      <div class="unlock-sub">This question is generated just for you by AI.</div>
+      <button class="unlock-btn" id="unlock-btn">I\'m ready →</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const starsEl = document.getElementById('unlock-stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'unlock-star';
+    const sz = Math.random() * 3 + 0.5;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*4+1).toFixed(1)}s;--dl:${(Math.random()*3).toFixed(1)}s;--x:${(Math.random()*200-100).toFixed(0)}px;--y:${(Math.random()*200-100).toFixed(0)}px`;
+    starsEl.appendChild(s);
+  }
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
+  document.getElementById('unlock-btn').onclick = () => {
+    overlay.classList.add('dismissing');
+    setTimeout(() => { overlay.remove(); onComplete(); }, 400);
+  };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -536,18 +711,18 @@ function startQuiz() {
   const cls  = document.getElementById('inp-class').value;
   if (!name) { document.getElementById('inp-name').focus(); return; }
   if (!cls)  { document.getElementById('inp-class').focus(); return; }
-
   S = {
     name, cls,
     domain: document.getElementById('inp-domain').value,
     style:  document.getElementById('inp-style').value,
     theta:0, streak:0, maxStreak:0,
     qs:[], currentQ:null, qNum:0,
-    startTime:Date.now(), qStart:Date.now()
+    startTime:Date.now(), qStart:Date.now(),
+    usedBankIDs: [],
+    challengeUnlocked: false
   };
   FALLBACK_USED.clear();
   lastRequestTime = 0;
-
   const sb = document.getElementById('stars'); sb.innerHTML='';
   for(let i=0;i<80;i++){
     const s=document.createElement('div'); s.className='star-dot';
@@ -555,7 +730,6 @@ function startQuiz() {
     s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+1).toFixed(1)}s;--dl:${(Math.random()*3).toFixed(1)}s`;
     sb.appendChild(s);
   }
-
   showScreen('quiz');
   updateFinishButton(0);
   loadQuestion();
@@ -567,34 +741,52 @@ function showLoading(msg) {
 }
 
 async function loadQuestion() {
-  showLoading('Generating your next question…');
   const domains = ['Biology','Physics','Working Scientifically'];
   const domain  = S.domain === 'all'
     ? domains[Math.floor(Math.random() * domains.length)]
     : S.domain;
   const diff = targetDiff(S.theta);
 
-  let q = await fetchQuestion(domain, diff, S.theta, S.style);
-  if (!q) q = getFallback(domain, diff);
+  if (diff === 5) {
+    if (!S.challengeUnlocked) {
+      S.challengeUnlocked = true;
+      showUnlockOverlay(S.name, async () => {
+        showLoading('🧠 Generating your Challenge question…');
+        let q = await fetchAIChallenge(domain, S.theta, S.style);
+        if (!q) q = getFallback(domain, 4);
+        S.currentQ = q; S.qNum += 1; S.qStart = Date.now();
+        renderQuestion(q);
+      });
+      return;
+    }
+    showLoading('🧠 Generating your next Challenge question…');
+    let q = await fetchAIChallenge(domain, S.theta, S.style);
+    if (!q) q = getFallback(domain, 4);
+    S.currentQ = q; S.qNum += 1; S.qStart = Date.now();
+    renderQuestion(q);
+    return;
+  }
 
-  S.currentQ = q;
-  S.qNum    += 1;
-  S.qStart   = Date.now();
+  showLoading('Loading next question…');
+  let q = await fetchFromBank(domain, diff);
+  if (!q) q = getFallback(domain, diff);
+  S.currentQ = q; S.qNum += 1; S.qStart = Date.now();
   renderQuestion(q);
 }
 
 function renderQuestion(q) {
   const n   = S.qNum;
   const dcb = {Biology:'db-bio',Chemistry:'db-chem',Physics:'db-phys','Working Scientifically':'db-ws'};
-  const dchip = {1:'dc-easy Easy',2:'dc-medium Medium',3:'dc-hard Hard',4:'dc-ext Extension'};
-  const [dcls,dlbl] = (dchip[q.diff]||'dc-medium Medium').split(' ');
+  const dchip = {1:'dc-easy Below level',2:'dc-medium At level',3:'dc-hard Top of grade',4:'dc-ext Extension','5':'dc-chal Challenge'};
+  const parts = (dchip[q.diff]||'dc-medium At level').split(' ');
+  const dcls = parts[0], dlbl = parts.slice(1).join(' ');
 
   document.getElementById('hdr-name').textContent  = S.name;
   document.getElementById('hdr-cls').textContent   = S.cls;
   document.getElementById('hdr-count').textContent = `Q${n}`;
   document.getElementById('prog').style.width      = Math.min(95,n*4)+'%';
-  document.getElementById('hdr-diff').textContent  = q.ext ? '★ Extension' : dlbl;
-  document.getElementById('hdr-diff').className    = 'diff-chip '+(q.ext?'dc-ext':dcls);
+  document.getElementById('hdr-diff').textContent  = q.diff === 5 ? '🧠 Challenge' : dlbl;
+  document.getElementById('hdr-diff').className    = 'diff-chip '+(q.diff === 5 ? 'dc-chal' : q.ext ? 'dc-ext' : dcls);
 
   const streak = document.getElementById('streak');
   if(S.streak>=3){streak.classList.add('show');document.getElementById('streak-n').textContent=S.streak;}
@@ -603,11 +795,18 @@ function renderQuestion(q) {
   const letters = ['A','B','C','D'];
   const ctxHtml = q.context
     ? `<div class="q-ctx"><div class="q-ctx-lbl">📋 Read this first</div>${q.context}</div>`:'';
-  const hintHtml = q.ext
-    ? '<div class="q-hint">🚀 <strong>Extension challenge</strong> — this goes beyond Year 6. Give it your best shot!</div>':'';
-  const badge = q.ai && !q._fb
-    ? '<span class="ai-chip">AI</span>'
-    : (q._fb ? '<span class="fb-chip">Bank</span>' : '');
+  const hintHtml = q.diff === 5
+    ? '<div class="q-hint">🧠 <strong>Challenge question</strong> — this is Year 7/8 level. You\'ve earned it!</div>'
+    : q.ext
+    ? '<div class="q-hint">🚀 <strong>Extension challenge</strong> — this goes beyond Year 6. Give it your best shot!</div>'
+    : '';
+  const badge = q.challenge
+    ? '<span class="ai-chip" style="background:#1e1b4b;color:#c7d2fe">🧠 AI Challenge</span>'
+    : q.fromBank
+    ? '<span class="fb-chip" style="background:#ede9fe;color:#5b21b6">📚 Bank</span>'
+    : q._fb
+    ? '<span class="fb-chip">Local</span>'
+    : '';
 
   document.getElementById('qwrap').innerHTML = `
     <div class="fade-in">
