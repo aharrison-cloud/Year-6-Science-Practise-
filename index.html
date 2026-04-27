@@ -563,6 +563,22 @@ const FALLBACK = [
 ];
 
 let FALLBACK_USED = new Set();
+// ═══════════════════════════════════════════════════════
+// ANSWER RANDOMISATION
+// Shuffles the four options and updates the correct index.
+// Called on every question before rendering.
+// ═══════════════════════════════════════════════════════
+function shuffleQuestion(q) {
+  const indices = [0,1,2,3];
+  for (let i = 3; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const correctText = q.o[q.a];
+  const newOpts = indices.map(i => q.o[i]);
+  return {...q, o: newOpts, a: newOpts.indexOf(correctText)};
+}
+
 function getFallback(domain, diff) {
   let pool = FALLBACK.filter((q,i) =>
     !FALLBACK_USED.has(i) && (domain === 'all' || q.d === domain)
@@ -572,7 +588,7 @@ function getFallback(domain, diff) {
   const src   = match.length ? match : pool;
   const chosen = src[Math.floor(Math.random() * src.length)];
   FALLBACK_USED.add(FALLBACK.indexOf(chosen));
-  return {...chosen, _fb: true};
+  return shuffleQuestion({...chosen, _fb: true});
 }
 
 // ═══════════════════════════════════════════════════════
@@ -626,12 +642,12 @@ async function fetchFromBank(domain, diff) {
       S.usedBankIDs = S.usedBankIDs || [];
       S.usedBankIDs.push(data.id);
     }
-    return {
+    return shuffleQuestion({
       d: data.d || domain, diff: data.diff || diff,
       q: data.q, context: data.context || null,
       o: data.o, a: parseInt(data.a),
       e: data.e || '', fromBank: true, ext: false
-    };
+    });
   } catch(err) {
     console.warn('fetchFromBank failed:', err.message || err);
     return null;
