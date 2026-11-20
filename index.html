@@ -1029,7 +1029,7 @@ function sendToSheet(done,right,total,pct,elapsed,gradeLabel) {
     if(p<worstPct){worstPct=p;worst=dm;}
   });
   const params=new URLSearchParams({
-    name:S.name, cls:S.cls, year:'Year 6',
+    year:'Year 6',   // identity removed for data protection: no name/class leaves the browser. Add an opaque student number at login if attributed results are needed.
     score:`${right}/${total}`, pct, grade:gradeLabel,
     bio:scores[0], chem:'—', phys:scores[1], ws:scores[2],
     duration:elapsed, maxStreak:S.maxStreak,
