@@ -272,6 +272,7 @@ a.ttag:hover{border-color:var(--chem-mid);background:var(--chem-bg);color:var(--
   transition:transform .12s,box-shadow .12s}
 .unlock-btn:hover{transform:scale(1.04);box-shadow:0 0 45px rgba(99,102,241,.7)}
 </style>
+<script src="jscat.bundle.js"></script>
 </head>
 <body>
 
@@ -617,6 +618,38 @@ function updateTheta(theta, correct, diff) {
     : Math.max(-3, theta - step*(1-dv*.2));
 }
 
+// ── IRT adaptive ability (jsCAT, vendored) with graceful fallback to the heuristic above ──
+const DIFF_TO_B = {1:-2.0, 2:-0.5, 3:0.6, 4:1.5, 5:2.5};  // difficulty tier -> IRT b (difficulty)
+function makeCat(){
+  if (!window.JsCat || !window.JsCat.Cat) return null;      // bundle missing -> heuristic
+  try {
+    return new window.JsCat.Cat({method:'EAP', itemSelect:'MFI', theta:0,
+      minTheta:-6, maxTheta:6, priorDist:'norm', priorPar:[0,1]});
+  } catch(e){ console.warn('jsCAT init failed, using heuristic:', e); return null; }
+}
+// 1PL ability with a 1/4 guessing floor for 4-option MCQ (c:0.25)
+function abilityAnswer(correct, diff){
+  if (S.cat){
+    try {
+      S.cat.updateAbilityEstimate({a:1, b:(DIFF_TO_B[diff] ?? 0), c:0.25, d:1}, correct?1:0);
+      S.theta = S.cat.theta; S.se = S.cat.seMeasurement; return;
+    } catch(e){ console.warn('jsCAT update failed, using heuristic:', e); }
+  }
+  S.theta = updateTheta(S.theta, correct, diff);
+}
+// Recompute ability from the current answered set (used after the Back button)
+function abilityRebuild(){
+  S.cat = makeCat();
+  if (S.cat){
+    for (const e of S.qs){
+      try { S.cat.updateAbilityEstimate({a:1, b:(DIFF_TO_B[e.q.diff] ?? 0), c:0.25, d:1}, e.correct?1:0); } catch(_){}
+    }
+    S.theta = S.qs.length ? S.cat.theta : 0;
+  } else {
+    S.theta = S.qs.length ? updateTheta(S.theta, false, 2) : 0;
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // QUESTION FETCHER — THREE TIER SYSTEM
 // Tier 1: Google Sheets bank  (levels 1–4, action=getQuestion)
@@ -737,6 +770,7 @@ function startQuiz() {
     usedBankIDs: [],
     challengeUnlocked: false
   };
+  S.cat = makeCat();
   FALLBACK_USED.clear();
   lastRequestTime = 0;
   const sb = document.getElementById('stars'); sb.innerHTML='';
@@ -858,7 +892,7 @@ function pick(i) {
   });
   const correct = i === q.a;
   const elapsed = Date.now() - S.qStart;
-  S.theta = updateTheta(S.theta, correct, q.diff);
+  abilityAnswer(correct, q.diff);
   if(correct){S.streak++;S.maxStreak=Math.max(S.maxStreak,S.streak);}
   else S.streak=0;
   S.qs.push({q, chosen:i, correct, timeMs:elapsed});
@@ -874,7 +908,7 @@ function pick(i) {
 function goBack() {
   if(S.qs.length>0) S.qs.pop();
   S.qNum = Math.max(0,S.qNum-1);
-  S.theta = S.qs.length>0 ? updateTheta(S.theta,false,2) : 0;
+  abilityRebuild();
   updateFinishButton(S.qs.length);
   loadQuestion();
 }
